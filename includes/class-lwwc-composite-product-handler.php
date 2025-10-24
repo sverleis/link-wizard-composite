@@ -195,21 +195,17 @@ class LWWC_Composite_Product_Handler implements LWWC_Product_Handler_Interface {
 			return '';
 		}
 
-		// If no selections provided, return a basic checkout-link with just the product ID.
-		// This allows WooCommerce to use default component selections.
+		// IMPORTANT: Composite products ALWAYS need the URL mapping system,
+		// even for default configurations, because WooCommerce's native
+		// checkout-link handler doesn't understand composite product components.
+		//
+		// Our URL mapper will intercept the request and set the proper
+		// component configuration ($_GET parameters) that WooCommerce Composite Products expects.
+
+		// If no selections provided, use default component selections.
 		if ( empty( $component_selections ) ) {
-			return home_url( '/checkout-link/?products=' . $product->get_id() . ':1' );
+			$component_selections = $this->get_default_component_selections( $product );
 		}
-
-		// Check if the selections match the default configuration.
-		// If they do, we don't need a mapping - just use the simple product ID.
-		if ( $this->is_default_configuration( $product, $component_selections ) ) {
-			error_log( 'Link Wizard for Composites: Using default configuration for product ' . $product->get_id() );
-			return home_url( '/checkout-link/?products=' . $product->get_id() . ':1' );
-		}
-
-		// Custom configuration detected - use URL mapping system.
-		error_log( 'Link Wizard for Composites: Using custom configuration for product ' . $product->get_id() );
 
 		// Prepare configuration for URL mapper.
 		$configuration = array(
@@ -222,6 +218,47 @@ class LWWC_Composite_Product_Handler implements LWWC_Product_Handler_Interface {
 		$url_mapper = new LWWC_Composite_URL_Mapper();
 
 		return $url_mapper->generate_facebook_url( $product->get_id(), $configuration, 1 );
+	}
+
+	/**
+	 * Get default component selections for a composite product.
+	 *
+	 * This retrieves the default options and quantities for each component,
+	 * which allows us to create a "default configuration" URL.
+	 *
+	 * @param WC_Product $product The composite product.
+	 * @return array Default component selections.
+	 */
+	private function get_default_component_selections( $product ) {
+		$default_selections = array();
+
+		// Get composite data.
+		if ( ! method_exists( $product, 'get_composite_data' ) ) {
+			return $default_selections;
+		}
+
+		$composite_data = $product->get_composite_data();
+
+		// Get default selection for each component.
+		foreach ( $composite_data as $component_id => $component_data ) {
+			$component_obj = $product->get_component( $component_id );
+
+			if ( ! $component_obj ) {
+				continue;
+			}
+
+			// Get the default selected option.
+			$default_option = $component_obj->get_default_option();
+
+			if ( $default_option ) {
+				$default_selections[ $component_id ] = array(
+					'product_id' => $default_option,
+					'quantity'   => $component_obj->get_quantity( 'min' ), // Use minimum quantity as default.
+				);
+			}
+		}
+
+		return $default_selections;
 	}
 
 	/**
@@ -382,20 +419,25 @@ class LWWC_Composite_Product_Handler implements LWWC_Product_Handler_Interface {
 			return array();
 		}
 
+		// Generate default checkout URL (uses default component selections).
+		$default_checkout_url = $this->generate_checkout_url( $product, array() );
+
 		// Return basic product data for search results.
 		return array(
 			array(
-				'id'          => $product->get_id(),
-				'name'        => $product->get_name(),
-				'sku'         => $product->get_sku(),
-				'price'       => $product->get_price_html(),
-				'image'       => wp_get_attachment_image_url( $product->get_image_id(), 'thumbnail' ),
-				'parent_id'   => '',
-				'parent_name' => '',
-				'attributes'  => array(),
-				'type'        => 'composite',
-				'slug'        => $product->get_slug(),
-				'status'      => $product->get_status(),
+				'id'           => $product->get_id(),
+				'name'         => $product->get_name(),
+				'sku'          => $product->get_sku(),
+				'price'        => $product->get_price_html(),
+				'image'        => wp_get_attachment_image_url( $product->get_image_id(), 'thumbnail' ),
+				'parent_id'    => '',
+				'parent_name'  => '',
+				'attributes'   => array(),
+				'type'         => 'composite',
+				'slug'         => $product->get_slug(),
+				'status'       => $product->get_status(),
+				'checkout_url' => $default_checkout_url,  // Default configuration URL.
+				'url'          => $default_checkout_url,  // Alias for compatibility.
 			),
 		);
 	}
