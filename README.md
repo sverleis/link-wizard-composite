@@ -10,7 +10,15 @@ Link Wizard Composite is a focused addon for **Link Wizard for WooCommerce** tha
 
 ## Why a Separate Plugin?
 
-This plugin focuses solely on composite products. Bundle products are handled by the core Link Wizard plugin with default configurations.
+This plugin focuses solely on **Composite Products**. 
+
+**Important Note**: WooCommerce Composite Products and Product Bundles do **not** natively support checkout-links. This plugin adds that functionality specifically for composite products, enabling:
+- Custom component selections
+- Custom quantities per component
+- Facebook Commerce compatible URLs
+- Direct checkout-link support
+
+Bundle products and other product types are not supported by this plugin.
 
 ## Requirements
 
