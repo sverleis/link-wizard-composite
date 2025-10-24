@@ -31,6 +31,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * - WooCommerce doesn't natively support composite products in checkout-links
  * - Facebook Commerce requires simple, static URLs (no complex parameters)
  * - This system converts complex configs into simple IDs
+ * - We need the core plugin to allow for alterations to the product links, such as the cp139_3e3a7ecc part.
  */
 class LWWC_Composite_URL_Mapper {
 
@@ -100,7 +101,7 @@ class LWWC_Composite_URL_Mapper {
 	}
 
 	/**
-	 * Generate a Facebook-compatible URL for a composite product.
+	 * Generate a Meta-compatible URL for a composite product.
 	 *
 	 * PARAMETERS:
 	 * @param int   $product_id    The composite product ID (e.g., 139)
@@ -269,11 +270,18 @@ class LWWC_Composite_URL_Mapper {
 	/**
 	 * Set up composite product data from a mapping ID.
 	 *
-	 * This sets up the $_GET parameters that WooCommerce Composite Products expects.
-	 * When WooCommerce processes the checkout-link, it will see these parameters
-	 * and configure the composite product correctly.
+	 * THE CRITICAL STEP:
+	 * When someone visits checkout-link/?products=cp139_3e3a7ecc:1
+	 * We need to tell WooCommerce Composite Products:
+	 * "Hey, for component 1, use product 72 with quantity 2"
+	 * "And for component 2, use product 86 with quantity 1"
 	 *
-	 * TODO: This will be implemented when we build the composite product handler (Step 4).
+	 * HOW WE DO IT:
+	 * WooCommerce Composite Products reads $_GET parameters like:
+	 * - wccp_component_{component_id} = product_id
+	 * - wccp_quantity_{component_id} = quantity
+	 *
+	 * We set these parameters so WooCommerce sees them and configures the composite.
 	 *
 	 * @param string $mapping_id The mapping ID.
 	 */
@@ -282,13 +290,45 @@ class LWWC_Composite_URL_Mapper {
 		$config = $this->get_configuration( $mapping_id );
 
 		if ( ! $config ) {
+			error_log( 'Link Wizard for Composites: No configuration found for ' . $mapping_id );
 			return; // Configuration not found.
 		}
 
-		// TODO (Step 4): Set up $_GET parameters for WooCommerce Composite Products.
-		// This will use the composite product handler to apply the configuration.
-		
-		error_log( 'Link Wizard for Composites: Processing mapping ' . $mapping_id );
+		$product_id = $config['product_id'];
+		$configuration = $config['configuration'];
+
+		error_log( 'Link Wizard for Composites: Processing mapping ' . $mapping_id . ' for product ' . $product_id );
+
+		// Get the components from the configuration.
+		if ( ! isset( $configuration['components'] ) ) {
+			return; // No components configured.
+		}
+
+		$components = $configuration['components'];
+
+		// Set up $_GET parameters for each component.
+		// WooCommerce Composite Products will read these and configure the product.
+		foreach ( $components as $component_id => $component_data ) {
+			if ( ! isset( $component_data['product_id'] ) ) {
+				continue;
+			}
+
+			$selected_product_id = $component_data['product_id'];
+			$quantity = isset( $component_data['quantity'] ) ? $component_data['quantity'] : 1;
+
+			// Set component selection parameter.
+			// Format: wccp_component_{component_id} = product_id
+			$_GET[ 'wccp_component_' . $component_id ] = $selected_product_id;
+
+			// Set quantity parameter.
+			// Format: wccp_quantity_{component_id} = quantity
+			$_GET[ 'wccp_quantity_' . $component_id ] = $quantity;
+
+			error_log( "Link Wizard for Composites: Set component {$component_id} to product {$selected_product_id} with quantity {$quantity}" );
+		}
+
+		error_log( 'Link Wizard for Composites: Composite data configured for checkout' );
 	}
 }
+
 

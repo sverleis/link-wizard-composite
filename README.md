@@ -107,13 +107,40 @@ We apply: Set up composite with saved configuration
 Checkout: User sees configured composite product
 ```
 
+### Step 4: Composite Product Handler ✅
+
+**File**: `includes/class-lwwc-composite-product-handler.php`
+
+**What it does**:
+- Gets composite product data (components, options, pricing)
+- Generates checkout-link URLs with mapped configurations
+- Calculates total price based on selected components
+- Formats data for frontend display
+
+**Key Learning Points**:
+1. **Component Structure**: Each composite has configurable parts (components)
+2. **Options**: Each component has selectable products (options)
+3. **Data Formatting**: Converting between frontend format and storage format
+4. **WooCommerce Integration**: Understanding how Composite Products expects data
+
+**The Critical Parameters**:
+```php
+// These are the magic parameters WooCommerce Composite Products reads:
+$_GET['wccp_component_1'] = 72;  // Component 1 uses Product 72
+$_GET['wccp_quantity_1'] = 2;    // With quantity 2
+```
+
+**Enhanced URL Mapper**:
+- Now actually applies configurations when URLs are visited
+- Sets up `$_GET` parameters that WooCommerce understands
+- Converts mapped IDs into real composite configurations
+
 ### Next Steps
 
 We'll continue building:
-- **Step 4**: Composite product handler (applies configurations)
 - **Step 5**: REST API endpoints (for frontend communication)
-- **Step 6**: Price calculation (shows accurate pricing)
-- **Step 7**: Admin UI (component selection interface)
+- **Step 6**: Admin UI (component selection interface)
+- **Step 7**: Price calculation enhancement (using WooCommerce's native methods)
 
 Each step will be explained clearly so you understand exactly what's happening!
 

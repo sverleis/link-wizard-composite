@@ -84,5 +84,3 @@ class LWWC_Composite_Handler {
 		);
 	}
 }
-
-
