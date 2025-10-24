@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name: Link Wizard Composite
+ * Plugin Name: Link Wizard for Composites
  * Plugin URI: https://github.com/sverleis/link-wizard-composite
  * Description: Adds support for WooCommerce Composite Products to Link Wizard, enabling custom checkout-links with component selections and quantities.
  * Version: 1.0.0
@@ -63,7 +63,7 @@ function lwwc_composite_missing_dependency_notice() {
 	?>
 	<div class="notice notice-error">
 		<p>
-			<strong>Link Wizard Composite</strong> requires 
+			<strong>Link Wizard for Composites</strong> requires 
 			<strong>Link Wizard for WooCommerce</strong> to be installed and activated.
 		</p>
 	</div>
@@ -77,7 +77,7 @@ function lwwc_composite_missing_woocommerce_notice() {
 	?>
 	<div class="notice notice-error">
 		<p>
-			<strong>Link Wizard Composite</strong> requires 
+			<strong>Link Wizard for Composites</strong> requires 
 			<strong>WooCommerce</strong> to be installed and activated.
 		</p>
 	</div>
@@ -91,9 +91,7 @@ function lwwc_composite_missing_composite_notice() {
 	?>
 	<div class="notice notice-warning">
 		<p>
-			<strong>Link Wizard Composite</strong> requires 
-			<strong>WooCommerce Composite Products</strong> to be installed and activated 
-			to enable composite product checkout-links.
+			<strong>Link Wizard for Composites</strong> requires <strong>WooCommerce Composite Products</strong> to be installed and activated to enable composite product checkout-links.
 		</p>
 	</div>
 	<?php

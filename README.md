@@ -74,14 +74,46 @@ Bundle products and other product types are not supported by this plugin.
 )
 ```
 
+### Step 3: URL Mapping System ✅
+
+**File**: `includes/class-lwwc-composite-url-mapper.php`
+
+**What it does**:
+- Creates a database table to store composite configurations
+- Generates unique mapping IDs (e.g., `cp139_3e3a7ecc`)
+- Converts complex configurations into simple URLs
+- Intercepts checkout-link requests and applies configurations
+
+**Key Learning Points**:
+1. **Database Tables**: Creating custom tables to store plugin data
+2. **Mapping IDs**: Using product ID + hash for unique, consistent IDs
+3. **Template Redirect Hook**: Intercepting requests before WordPress loads the page
+4. **Configuration Storage**: JSON encoding complex data for database storage
+
+**The Magic**:
+```
+User configures: Component A = Product 72, Qty 2
+↓
+We store: cp139_3e3a7ecc → {"components": {"1": {"product_id": 72, "quantity": 2}}}
+↓
+We generate: checkout-link/?products=cp139_3e3a7ecc:1
+↓
+User visits URL
+↓
+We intercept: Look up cp139_3e3a7ecc in database
+↓
+We apply: Set up composite with saved configuration
+↓
+Checkout: User sees configured composite product
+```
+
 ### Next Steps
 
 We'll continue building:
-- **Step 3**: URL mapping system for composite products
-- **Step 4**: Component selection handling
-- **Step 5**: Price calculation
-- **Step 6**: Admin UI integration
-- **Step 7**: REST API endpoints
+- **Step 4**: Composite product handler (applies configurations)
+- **Step 5**: REST API endpoints (for frontend communication)
+- **Step 6**: Price calculation (shows accurate pricing)
+- **Step 7**: Admin UI (component selection interface)
 
 Each step will be explained clearly so you understand exactly what's happening!
 

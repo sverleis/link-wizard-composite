@@ -31,14 +31,31 @@ class LWWC_Composite_Handler {
 	 */
 	public function init() {
 		// Log initialization for debugging.
-		error_log( 'Link Wizard Composite: Handler initialized' );
+		error_log( 'Link Wizard for Composites: Handler initialized' );
 
 		// Register this plugin with Link Wizard's addon system.
 		add_filter( 'lwwc_addon_capabilities', array( $this, 'register_capabilities' ), 10, 2 );
 
-		// TODO: Initialize URL mapper (Step 3).
+		// Initialize URL mapper (Step 3).
+		$this->init_url_mapper();
+
 		// TODO: Register REST API endpoints (Step 5).
 		// TODO: Enqueue admin assets (Step 6).
+	}
+
+	/**
+	 * Initialize the URL mapper.
+	 *
+	 * Creates the URL mapper instance and initializes it.
+	 * This is called during plugin initialization.
+	 */
+	private function init_url_mapper() {
+		require_once LWWC_COMPOSITE_PATH . 'includes/class-lwwc-composite-url-mapper.php';
+		
+		$url_mapper = new LWWC_Composite_URL_Mapper();
+		$url_mapper->init();
+
+		error_log( 'Link Wizard for Composites: URL Mapper loaded' );
 	}
 
 	/**
@@ -67,4 +84,5 @@ class LWWC_Composite_Handler {
 		);
 	}
 }
+
 
