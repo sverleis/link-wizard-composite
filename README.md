@@ -47,14 +47,41 @@ Bundle products and other product types are not supported by this plugin.
 3. **Dependency Checking**: Always check if required plugins are active before running your code
 4. **Admin Notices**: Helpful messages guide users if something is missing
 
+### Step 2: Main Handler Class ✅
+
+**File**: `includes/class-lwwc-composite-handler.php`
+
+**What it does**:
+- Acts as the central coordinator for all composite product functionality
+- Registers the plugin with Link Wizard's addon system
+- Manages initialization of all components
+- Tells Link Wizard what capabilities this plugin provides
+
+**Key Learning Points**:
+1. **Handler Pattern**: A single class coordinates all plugin functionality
+2. **Capability Registration**: Using filters to tell Link Wizard what we support
+3. **Plugin Slug Checking**: Only respond when Link Wizard asks about our specific plugin
+4. **Capabilities Array**: Declare product types and features we support
+
+**Code Highlights**:
+```php
+// Register what we can do
+'product_types' => array( 'composite' ),  // We handle composite products
+'features' => array(
+    'checkout_links',     // We enable checkout-links
+    'custom_components',  // Custom component selections
+    'price_calculation',  // Calculate composite prices
+)
+```
+
 ### Next Steps
 
-We'll build this plugin piece by piece, adding:
-- URL mapping system for composite products
-- Component selection handling
-- Price calculation
-- Admin UI integration
-- REST API endpoints
+We'll continue building:
+- **Step 3**: URL mapping system for composite products
+- **Step 4**: Component selection handling
+- **Step 5**: Price calculation
+- **Step 6**: Admin UI integration
+- **Step 7**: REST API endpoints
 
 Each step will be explained clearly so you understand exactly what's happening!
 
