@@ -462,12 +462,13 @@ class LWWC_Composite_Product_Handler implements LWWC_Product_Handler_Interface {
 		if ( $this->can_handle( $product ) ) {
 			$components = $this->get_components( $product );
 			
-			foreach ( $components as $component_id => $component ) {
-				$options = $this->get_options_for_component( $component );
-				if ( empty( $options ) ) {
+			foreach ( $components as $component ) {
+				// Check if component has options by looking at its configuration.
+				$component_options = $component['options'] ?? array();
+				if ( empty( $component_options ) ) {
 					$warnings[] = sprintf(
 						__( 'Component "%s" has no available options.', 'link-wizard-composite' ),
-						$component->get_title()
+						$component['title'] ?? 'Unknown'
 					);
 				}
 			}
