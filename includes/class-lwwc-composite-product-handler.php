@@ -445,8 +445,8 @@ class LWWC_Composite_Product_Handler implements LWWC_Product_Handler_Interface {
 			return array();
 		}
 
-		// Generate default checkout URL (uses default component selections).
-		$default_checkout_url = $this->generate_checkout_url( $product, array() );
+		// Generate default URL using the new generate_url method.
+		$default_url = $this->generate_url( $product, 'addToCart', array( 'redirect_path' => '/' ) );
 
 		// Return basic product data for search results.
 		return array(
@@ -462,8 +462,8 @@ class LWWC_Composite_Product_Handler implements LWWC_Product_Handler_Interface {
 				'type'         => 'composite',
 				'slug'         => $product->get_slug(),
 				'status'       => $product->get_status(),
-				'checkout_url' => $default_checkout_url,  // Default configuration URL.
-				'url'          => $default_checkout_url,  // Alias for compatibility.
+				'checkout_url' => $default_url,  // Default configuration URL.
+				'url'          => $default_url,  // Alias for compatibility.
 			),
 		);
 	}
@@ -547,6 +547,53 @@ class LWWC_Composite_Product_Handler implements LWWC_Product_Handler_Interface {
 			'errors'   => $errors,
 			'warnings' => $warnings,
 		);
+	}
+
+	/**
+	 * Generate URL for composite products.
+	 *
+	 * Composite products use a special URL format with component selections.
+	 * This method generates the proper ?add-to-cart URL with all component parameters.
+	 *
+	 * @param WC_Product $product      The product.
+	 * @param string     $link_type    'addToCart' or 'checkoutLink'.
+	 * @param array      $options      Additional options (redirect, quantity, component_selections, etc.).
+	 * @return string The generated URL.
+	 */
+	public function generate_url( $product, $link_type, $options = array() ) {
+		if ( ! $this->can_handle( $product ) ) {
+			return null;
+		}
+
+		// Extract options.
+		$redirect_path       = $options['redirect_path'] ?? '/';
+		$quantity            = $options['quantity'] ?? 1;
+		$component_selections = $options['component_selections'] ?? array();
+
+		// If no component selections provided, use defaults.
+		if ( empty( $component_selections ) ) {
+			$component_selections = $this->get_default_component_selections( $product );
+		}
+
+		// Build the URL.
+		$url = home_url( $redirect_path );
+		$url .= '?add-to-cart=' . $product->get_id();
+
+		// Add component selections.
+		foreach ( $component_selections as $component_id => $selection ) {
+			$product_id = $selection['product_id'] ?? null;
+			$comp_quantity = $selection['quantity'] ?? 1;
+
+			if ( $product_id ) {
+				$url .= '&wccp_component_selection%5B' . $component_id . '%5D=' . $product_id;
+				$url .= '&wccp_component_quantity%5B' . $component_id . '%5D=' . $comp_quantity;
+			}
+		}
+
+		// Add main product quantity.
+		$url .= '&quantity=' . $quantity;
+
+		return $url;
 	}
 }
 
