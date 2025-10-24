@@ -6,17 +6,27 @@
 
 ## What is This Plugin?
 
-Link Wizard Composite is a focused addon for **Link Wizard for WooCommerce** that adds support for **WooCommerce Composite Products**. It enables you to create custom checkout-links with specific component selections and quantities.
+Link Wizard Composite is a focused addon for **Link Wizard for WooCommerce** that adds support for **WooCommerce Composite Products**. It enables you to:
+- **Add composite products immediately** with default configuration (no setup required)
+- **Create custom checkout-links** with specific component selections and quantities
+- **Use both checkout-links and add-to-cart links** with composite products
 
 ## Why a Separate Plugin?
 
 This plugin focuses solely on **Composite Products**. 
 
 **Important Note**: WooCommerce Composite Products and Product Bundles do **not** natively support checkout-links. This plugin adds that functionality specifically for composite products, enabling:
-- Custom component selections
-- Custom quantities per component
-- Facebook Commerce compatible URLs
-- Direct checkout-link support
+- ✅ **Immediate Use**: Composite products appear in search results with default configuration ready
+- ✅ **Custom component selections**: Choose specific products for each component
+- ✅ **Custom quantities per component**: Set exact quantities for each part
+- ✅ **Facebook Commerce compatible URLs**: Works with Meta/Facebook shops
+- ✅ **Direct checkout-link support**: Links go straight to cart/checkout with product configured
+
+**How It Works**:
+1. Search for a composite product in Link Wizard
+2. Click to add it → Uses default component configuration automatically
+3. OR: Configure custom components → Creates a custom URL for your specific setup
+4. Works for both checkout-links and add-to-cart links
 
 Bundle products and other product types are not supported by this plugin.
 
@@ -135,10 +145,39 @@ $_GET['wccp_quantity_1'] = 2;    // With quantity 2
 - Sets up `$_GET` parameters that WooCommerce understands
 - Converts mapped IDs into real composite configurations
 
-**Smart URL Generation**:
-- ✅ Default configuration: `?products=139:1` (simple, no mapping needed)
-- ✅ Custom configuration: `?products=cp139_3e3a7ecc:1` (uses mapping system)
-- Benefits: Simpler URLs when possible, less database storage, better debugging
+**Smart URL Generation** (Updated):
+- ✅ **All composite products use mapping system**: `?products=cp139_3e3a7ecc:1`
+- ✅ Why? WooCommerce's checkout-link doesn't understand composite components natively
+- ✅ Our URL mapper intercepts and applies component configuration automatically
+- ✅ Works for both default and custom configurations seamlessly
+
+### Step 4.5: Default Configuration Support ✅
+
+**File**: `includes/class-lwwc-composite-product-handler.php` (enhanced)
+
+**What it does**:
+- Enables immediate addition of composite products without configuration
+- Retrieves default component selections automatically
+- Creates mapped URLs even for default configurations
+- Adds `checkout_url` to search results so products work immediately
+
+**Key Methods Added**:
+```php
+get_default_component_selections( $product )  // Gets default options for each component
+get_search_results( $product )                // Now includes checkout_url for instant use
+```
+
+**How It Works**:
+1. When a composite product is searched, we generate a default checkout URL
+2. URL uses the mapping system with default component selections
+3. User clicks product → It's immediately added to selected products
+4. Works for both checkout-links and add-to-cart links
+5. No UI configuration required for basic use
+
+**User Experience**:
+- **Before**: Composite products appeared in search but couldn't be added
+- **After**: Composite products work like simple products (click and add!)
+- **Custom Config**: Still available when user needs specific component choices
 
 ### Next Steps
 
@@ -158,15 +197,17 @@ Each step will be explained clearly so you understand exactly what's happening!
 ## Current Status
 
 **Completed**:
-- ✅ Plugin foundation
-- ✅ Dependency checking
-- ✅ Admin notices
+- ✅ Plugin foundation with dependency checking and admin notices
+- ✅ Main handler class with capability registration
+- ✅ URL mapping system with database storage
+- ✅ Composite product handler with product interface implementation
+- ✅ **Search functionality - Composite products now appear in Link Wizard!**
+- ✅ **Default configuration support - Products work immediately without setup!**
 
 **Coming Next**:
-- ⏳ URL mapping system
-- ⏳ Composite product handler
-- ⏳ Admin UI
-- ⏳ REST API
+- ⏳ REST API endpoints (for frontend communication)
+- ⏳ Admin UI (component selection interface)
+- ⏳ Price calculation enhancement
 
 ## License
 
