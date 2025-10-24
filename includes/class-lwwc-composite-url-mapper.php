@@ -117,12 +117,32 @@ class LWWC_Composite_URL_Mapper {
 	 * → "http://site.com/checkout-link/?products=cp139_3e3a7ecc:1"
 	 */
 	public function generate_facebook_url( $product_id, $configuration, $quantity = 1 ) {
-		// Create or retrieve the mapping ID for this configuration.
-		$mapping_id = $this->create_mapping( $product_id, $configuration );
+		// IMPORTANT: WooCommerce's /checkout-link/ feature does NOT support composite products.
+		// It only works for simple products with no configuration needed.
+		//
+		// Instead, we use the ?add-to-cart=ID format with component parameters.
+		// This format:
+		// - Works with composite products
+		// - Adds product to cart with correct configuration
+		// - Redirects to cart/checkout based on WooCommerce settings
+		
+		// Build add-to-cart URL with component parameters.
+		$url = home_url( '/?add-to-cart=' . $product_id );
+		
+		// Add component selections.
+		if ( isset( $configuration['components'] ) && ! empty( $configuration['components'] ) ) {
+			foreach ( $configuration['components'] as $component_id => $component_data ) {
+				if ( isset( $component_data['product_id'] ) ) {
+					$url .= '&wccp_component_selection%5B' . $component_id . '%5D=' . $component_data['product_id'];
+					$url .= '&wccp_component_quantity%5B' . $component_id . '%5D=' . ( $component_data['quantity'] ?? 1 );
+				}
+			}
+		}
+		
+		// Add main product quantity.
+		$url .= '&quantity=' . $quantity;
 
-		// Build the simple checkout-link URL.
-		$base_url = home_url( '/checkout-link/' );
-		return add_query_arg( 'products', $mapping_id . ':' . $quantity, $base_url );
+		return $url;
 	}
 
 	/**
@@ -320,12 +340,20 @@ class LWWC_Composite_URL_Mapper {
 			$quantity = isset( $component_data['quantity'] ) ? $component_data['quantity'] : 1;
 
 			// Set component selection parameter.
-			// Format: wccp_component_{component_id} = product_id
-			$_GET[ 'wccp_component_' . $component_id ] = $selected_product_id;
+			// WooCommerce Composite Products expects: wccp_component_selection[{component_id}] = product_id
+			if ( ! isset( $_REQUEST['wccp_component_selection'] ) ) {
+				$_REQUEST['wccp_component_selection'] = array();
+			}
+			$_REQUEST['wccp_component_selection'][ $component_id ] = $selected_product_id;
+			$_GET['wccp_component_selection'][ $component_id ] = $selected_product_id;
 
 			// Set quantity parameter.
-			// Format: wccp_quantity_{component_id} = quantity
-			$_GET[ 'wccp_quantity_' . $component_id ] = $quantity;
+			// WooCommerce Composite Products expects: wccp_component_quantity[{component_id}] = quantity
+			if ( ! isset( $_REQUEST['wccp_component_quantity'] ) ) {
+				$_REQUEST['wccp_component_quantity'] = array();
+			}
+			$_REQUEST['wccp_component_quantity'][ $component_id ] = $quantity;
+			$_GET['wccp_component_quantity'][ $component_id ] = $quantity;
 
 			error_log( "Link Wizard for Composites: Set component {$component_id} to product {$selected_product_id} with quantity {$quantity}" );
 		}
