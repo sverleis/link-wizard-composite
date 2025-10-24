@@ -179,10 +179,87 @@ get_search_results( $product )                // Now includes checkout_url for i
 - **After**: Composite products work like simple products (click and add!)
 - **Custom Config**: Still available when user needs specific component choices
 
+### Step 5: REST API Endpoints ✅
+
+**File**: `includes/class-lwwc-composite-rest-api.php`
+
+**What it does**:
+- Creates the communication bridge between React frontend and PHP backend
+- Registers three REST API endpoints for composite product functionality
+- Handles authentication and permission checking
+- Enables frontend to request data and perform actions
+
+**The Three Endpoints**:
+
+1. **GET `/lwwc-composite/v1/product/{id}`** - Get Product Data
+   - Returns complete composite product information
+   - Includes all components with their options
+   - Provides quantity limits and default selections
+   - Used when user expands a composite product in UI
+
+2. **POST `/lwwc-composite/v1/generate-url`** - Generate Checkout URL
+   - Accepts component selections from frontend
+   - Creates mapped URL with configuration
+   - Returns Facebook/Meta-compatible checkout link
+   - Used when user configures components and clicks "Add"
+
+3. **POST `/lwwc-composite/v1/calculate-price`** - Calculate Price
+   - Accepts component selections
+   - Calculates total price based on selected options
+   - Returns formatted price HTML
+   - Used to update price as user changes selections
+
+**Frontend Usage Example**:
+```javascript
+// Get composite product data
+const productData = await apiFetch({
+  path: '/lwwc-composite/v1/product/139'
+});
+
+// Generate checkout URL
+const urlData = await apiFetch({
+  path: '/lwwc-composite/v1/generate-url',
+  method: 'POST',
+  data: {
+    product_id: 139,
+    component_selections: {
+      '1757251116': { product_id: 72, quantity: 1 },
+      '1757251203': { product_id: 86, quantity: 2 }
+    },
+    quantity: 1
+  }
+});
+
+// Calculate price
+const priceData = await apiFetch({
+  path: '/lwwc-composite/v1/calculate-price',
+  method: 'POST',
+  data: {
+    product_id: 139,
+    component_selections: {
+      '1757251116': { product_id: 72, quantity: 1 },
+      '1757251203': { product_id: 86, quantity: 2 }
+    }
+  }
+});
+```
+
+**Key Features**:
+- ✅ Permission checking (requires `manage_woocommerce` capability)
+- ✅ Input validation for all parameters
+- ✅ Error handling with proper HTTP status codes
+- ✅ Supports both REST API and UI data formats
+- ✅ Returns consistent JSON responses
+
+**Integration**:
+- Initialized in main handler class
+- Automatically registered when plugin loads
+- Uses existing product handler for business logic
+- Ready for frontend React components to consume
+
 ### Next Steps
 
 We'll continue building:
-- **Step 5**: REST API endpoints (for frontend communication)
 - **Step 6**: Admin UI (component selection interface)
 - **Step 7**: Price calculation enhancement (using WooCommerce's native methods)
 
@@ -203,10 +280,11 @@ Each step will be explained clearly so you understand exactly what's happening!
 - ✅ Composite product handler with product interface implementation
 - ✅ **Search functionality - Composite products now appear in Link Wizard!**
 - ✅ **Default configuration support - Products work immediately without setup!**
+- ✅ **REST API endpoints - Frontend can now communicate with backend!**
 
 **Coming Next**:
-- ⏳ REST API endpoints (for frontend communication)
 - ⏳ Admin UI (component selection interface)
+- ⏳ Frontend integration with Link Wizard
 - ⏳ Price calculation enhancement
 
 ## License
