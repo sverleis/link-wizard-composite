@@ -54,8 +54,9 @@ class LWWC_Composite_URL_Mapper {
 		add_action( 'init', array( $this, 'maybe_create_table' ), 1 );
 
 		// Intercept checkout-link requests to process our mapped URLs.
-		// Priority 1 ensures we run early, before WooCommerce processes the request.
-		add_action( 'template_redirect', array( $this, 'handle_checkout_link' ), 1 );
+		// Use 'wp' hook with priority 0 to run before WooCommerce processes the request.
+		// This is critical - we must set $_GET parameters before WooCommerce reads them.
+		add_action( 'wp', array( $this, 'handle_checkout_link' ), 0 );
 
 		error_log( 'Link Wizard for Composites: URL Mapper initialized' );
 	}
@@ -301,10 +302,12 @@ class LWWC_Composite_URL_Mapper {
 
 		// Get the components from the configuration.
 		if ( ! isset( $configuration['components'] ) ) {
+			error_log( 'Link Wizard for Composites: No components in configuration!' );
 			return; // No components configured.
 		}
 
 		$components = $configuration['components'];
+		error_log( 'Link Wizard for Composites: Found ' . count( $components ) . ' components to configure' );
 
 		// Set up $_GET parameters for each component.
 		// WooCommerce Composite Products will read these and configure the product.

@@ -208,9 +208,19 @@ class LWWC_Composite_Product_Handler implements LWWC_Product_Handler_Interface {
 		}
 
 		// Prepare configuration for URL mapper.
+		// Check if component_selections is already in storage format (has numeric keys with product_id/quantity)
+		// vs frontend format (has 'id' and 'selected_option' keys)
+		$is_frontend_format = false;
+		foreach ( $component_selections as $key => $selection ) {
+			if ( is_array( $selection ) && isset( $selection['id'] ) && isset( $selection['selected_option'] ) ) {
+				$is_frontend_format = true;
+				break;
+			}
+		}
+
 		$configuration = array(
 			'product_id' => $product->get_id(),
-			'components' => $this->format_component_selections( $component_selections ),
+			'components' => $is_frontend_format ? $this->format_component_selections( $component_selections ) : $component_selections,
 		);
 
 		// Use URL mapper to create the mapped URL.
