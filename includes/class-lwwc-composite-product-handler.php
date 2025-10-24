@@ -382,15 +382,31 @@ class LWWC_Composite_Product_Handler implements LWWC_Product_Handler_Interface {
 		$total_price = 0;
 
 		// Add up component prices.
-		foreach ( $component_selections as $selection ) {
-			if ( ! isset( $selection['selected_option']['id'] ) || ! isset( $selection['quantity'] ) ) {
+		foreach ( $component_selections as $component_id => $selection ) {
+			// Handle both formats:
+			// Format 1: { component_id: { product_id: X, quantity: Y } }  (from REST API)
+			// Format 2: { id: X, selected_option: { id: Y }, quantity: Z }  (from frontend UI)
+			
+			$product_id = null;
+			$quantity = 1;
+			
+			if ( isset( $selection['product_id'] ) ) {
+				// Format 1 (REST API format).
+				$product_id = $selection['product_id'];
+				$quantity = isset( $selection['quantity'] ) ? $selection['quantity'] : 1;
+			} elseif ( isset( $selection['selected_option']['id'] ) ) {
+				// Format 2 (UI format).
+				$product_id = $selection['selected_option']['id'];
+				$quantity = isset( $selection['quantity'] ) ? $selection['quantity'] : 1;
+			}
+			
+			if ( ! $product_id ) {
 				continue;
 			}
 
-			$component_product = wc_get_product( $selection['selected_option']['id'] );
+			$component_product = wc_get_product( $product_id );
 			if ( $component_product ) {
 				$component_price = $component_product->get_price();
-				$quantity = $selection['quantity'];
 				$total_price += ( $component_price * $quantity );
 			}
 		}

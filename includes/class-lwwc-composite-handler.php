@@ -42,7 +42,9 @@ class LWWC_Composite_Handler {
 		// Initialize URL mapper (Step 3).
 		$this->init_url_mapper();
 
-		// TODO: Register REST API endpoints (Step 5).
+		// Initialize REST API endpoints (Step 5).
+		$this->init_rest_api();
+
 		// TODO: Enqueue admin assets (Step 6).
 	}
 
@@ -59,6 +61,21 @@ class LWWC_Composite_Handler {
 		$url_mapper->init();
 
 		error_log( 'Link Wizard for Composites: URL Mapper loaded' );
+	}
+
+	/**
+	 * Initialize the REST API.
+	 *
+	 * Creates the REST API handler and initializes endpoints.
+	 * This is called during plugin initialization.
+	 */
+	private function init_rest_api() {
+		require_once LWWC_COMPOSITE_PATH . 'includes/class-lwwc-composite-rest-api.php';
+		
+		$rest_api = new LWWC_Composite_REST_API();
+		$rest_api->init();
+
+		error_log( 'Link Wizard for Composites: REST API loaded' );
 	}
 
 	/**
