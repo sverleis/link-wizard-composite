@@ -36,6 +36,9 @@ class LWWC_Composite_Handler {
 		// Register this plugin with Link Wizard's addon system.
 		add_filter( 'lwwc_addon_capabilities', array( $this, 'register_capabilities' ), 10, 2 );
 
+		// Register our product handler with Link Wizard's handler manager.
+		add_action( 'lwwc_after_product_handlers_loaded', array( $this, 'register_product_handler' ) );
+
 		// Initialize URL mapper (Step 3).
 		$this->init_url_mapper();
 
@@ -56,6 +59,24 @@ class LWWC_Composite_Handler {
 		$url_mapper->init();
 
 		error_log( 'Link Wizard for Composites: URL Mapper loaded' );
+	}
+
+	/**
+	 * Register our product handler with Link Wizard's handler manager.
+	 *
+	 * This allows composite products to appear in search results and be handled properly.
+	 *
+	 * @param LWWC_Product_Handler_Manager $handler_manager The handler manager instance.
+	 */
+	public function register_product_handler( $handler_manager ) {
+		// Load our composite product handler.
+		require_once LWWC_COMPOSITE_PATH . 'includes/class-lwwc-composite-product-handler.php';
+		
+		// Create and register the handler.
+		$composite_handler = new LWWC_Composite_Product_Handler();
+		$handler_manager->register_handler( $composite_handler );
+		
+		error_log( 'Link Wizard for Composites: Product handler registered' );
 	}
 
 	/**

@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * - Calculates total price based on selected components
  * - Validates composite product configurations
  */
-class LWWC_Composite_Product_Handler {
+class LWWC_Composite_Product_Handler implements LWWC_Product_Handler_Interface {
 
 	/**
 	 * Check if we can handle this product.
@@ -360,6 +360,124 @@ class LWWC_Composite_Product_Handler {
 
 		// Return formatted price.
 		return $total_price > 0 ? wc_price( $total_price ) : false;
+	}
+
+	/**
+	 * Get the product type this handler supports.
+	 *
+	 * @return string
+	 */
+	public function get_product_type() {
+		return 'composite';
+	}
+
+	/**
+	 * Get search results for this product type.
+	 *
+	 * @param WC_Product $product
+	 * @return array
+	 */
+	public function get_search_results( $product ) {
+		if ( ! $this->can_handle( $product ) ) {
+			return array();
+		}
+
+		// Return basic product data for search results.
+		return array(
+			array(
+				'id'          => $product->get_id(),
+				'name'        => $product->get_name(),
+				'sku'         => $product->get_sku(),
+				'price'       => $product->get_price_html(),
+				'image'       => wp_get_attachment_image_url( $product->get_image_id(), 'thumbnail' ),
+				'parent_id'   => '',
+				'parent_name' => '',
+				'attributes'  => array(),
+				'type'        => 'composite',
+				'slug'        => $product->get_slug(),
+				'status'      => $product->get_status(),
+			),
+		);
+	}
+
+	/**
+	 * Validate if the product can be used in links.
+	 *
+	 * @param WC_Product $product
+	 * @return bool
+	 */
+	public function is_valid_for_links( $product ) {
+		if ( ! $this->can_handle( $product ) ) {
+			return false;
+		}
+
+		// Check if product is published and has components.
+		if ( 'publish' !== $product->get_status() ) {
+			return false;
+		}
+
+		// Check if composite has components.
+		$components = $this->get_components( $product );
+		return ! empty( $components );
+	}
+
+	/**
+	 * Get validation errors for the product.
+	 *
+	 * @param WC_Product $product
+	 * @return array Array of validation errors.
+	 */
+	public function get_validation_errors( $product ) {
+		$errors = array();
+
+		if ( ! $this->can_handle( $product ) ) {
+			return $errors;
+		}
+
+		// Check if product is published.
+		if ( 'publish' !== $product->get_status() ) {
+			$errors[] = __( 'Composite product is not published.', 'link-wizard-composite' );
+		}
+
+		// Check if composite has components.
+		$components = $this->get_components( $product );
+		if ( empty( $components ) ) {
+			$errors[] = __( 'Composite product has no components configured.', 'link-wizard-composite' );
+		}
+
+		return $errors;
+	}
+
+	/**
+	 * Get validation data for frontend display.
+	 *
+	 * @param WC_Product $product
+	 * @return array Validation data including errors and warnings.
+	 */
+	public function get_validation_data( $product ) {
+		$errors = $this->get_validation_errors( $product );
+		$warnings = array();
+
+		// Add warnings for composite-specific issues.
+		if ( $this->can_handle( $product ) ) {
+			$components = $this->get_components( $product );
+			
+			foreach ( $components as $component_id => $component ) {
+				$options = $this->get_options_for_component( $component );
+				if ( empty( $options ) ) {
+					$warnings[] = sprintf(
+						__( 'Component "%s" has no available options.', 'link-wizard-composite' ),
+						$component->get_title()
+					);
+				}
+			}
+		}
+
+		return array(
+			'is_valid' => empty( $errors ),
+			'errors'   => $errors,
+			'warnings' => $warnings,
+		);
 	}
 }
 
