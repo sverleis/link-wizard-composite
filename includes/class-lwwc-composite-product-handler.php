@@ -168,29 +168,48 @@ class LWWC_Composite_Product_Handler {
 	/**
 	 * Generate a checkout-link URL for a configured composite product.
 	 *
+	 * SMART URL GENERATION:
+	 * - If composite uses default values: Return simple URL (products=139:1)
+	 * - If composite has custom selections: Use URL mapping system (products=cp139_3e3a7ecc:1)
+	 *
+	 * WHY THIS MATTERS:
+	 * - Simpler URLs when possible (better for users, SEO, debugging)
+	 * - Only use mapping when actually needed (custom configurations)
+	 * - Reduces database storage (no mappings for default configs)
+	 *
 	 * HOW IT WORKS:
-	 * 1. User selects components (e.g., Component 1 = Product 72, Qty 2)
-	 * 2. We create a configuration array with all selections
-	 * 3. We pass it to the URL mapper
-	 * 4. URL mapper stores it and returns a mapping ID
-	 * 5. We build the final URL with that mapping ID
+	 * 1. Check if user made custom selections
+	 * 2. If yes: Use URL mapping system
+	 * 3. If no: Return simple product URL
 	 *
 	 * PARAMETERS:
 	 * @param WC_Product $product             The composite product.
 	 * @param array      $component_selections Array of component selections.
 	 *
 	 * RETURNS:
-	 * Simple URL like: checkout-link/?products=cp139_3e3a7ecc:1
+	 * - Default config: checkout-link/?products=139:1
+	 * - Custom config: checkout-link/?products=cp139_3e3a7ecc:1
 	 */
 	public function generate_checkout_url( $product, $component_selections = array() ) {
 		if ( ! $this->can_handle( $product ) ) {
 			return '';
 		}
 
-		// If no selections provided, return a basic checkout-link.
+		// If no selections provided, return a basic checkout-link with just the product ID.
+		// This allows WooCommerce to use default component selections.
 		if ( empty( $component_selections ) ) {
 			return home_url( '/checkout-link/?products=' . $product->get_id() . ':1' );
 		}
+
+		// Check if the selections match the default configuration.
+		// If they do, we don't need a mapping - just use the simple product ID.
+		if ( $this->is_default_configuration( $product, $component_selections ) ) {
+			error_log( 'Link Wizard for Composites: Using default configuration for product ' . $product->get_id() );
+			return home_url( '/checkout-link/?products=' . $product->get_id() . ':1' );
+		}
+
+		// Custom configuration detected - use URL mapping system.
+		error_log( 'Link Wizard for Composites: Using custom configuration for product ' . $product->get_id() );
 
 		// Prepare configuration for URL mapper.
 		$configuration = array(
@@ -203,6 +222,61 @@ class LWWC_Composite_Product_Handler {
 		$url_mapper = new LWWC_Composite_URL_Mapper();
 
 		return $url_mapper->generate_facebook_url( $product->get_id(), $configuration, 1 );
+	}
+
+	/**
+	 * Check if component selections match the default configuration.
+	 *
+	 * WHY WE CHECK:
+	 * If user selected exactly what the composite would use by default,
+	 * we don't need a special URL - just use products=139:1
+	 *
+	 * HOW WE CHECK:
+	 * 1. Get the default component selections from WooCommerce
+	 * 2. Compare with user's selections
+	 * 3. If they match: Return true (use simple URL)
+	 * 4. If different: Return false (use mapped URL)
+	 *
+	 * @param WC_Product $product             The composite product.
+	 * @param array      $component_selections User's component selections.
+	 * @return bool True if selections match defaults.
+	 */
+	private function is_default_configuration( $product, $component_selections ) {
+		// Get composite data.
+		if ( ! method_exists( $product, 'get_composite_data' ) ) {
+			return false;
+		}
+
+		$composite_data = $product->get_composite_data();
+
+		// Check each component selection against defaults.
+		foreach ( $component_selections as $selection ) {
+			if ( ! isset( $selection['id'] ) || ! isset( $selection['selected_option'] ) ) {
+				continue;
+			}
+
+			$component_id = $selection['id'];
+			$selected_product_id = $selection['selected_option']['id'];
+			$selected_quantity = isset( $selection['quantity'] ) ? $selection['quantity'] : 1;
+
+			// Get component object.
+			$component_obj = $product->get_component( $component_id );
+			if ( ! $component_obj ) {
+				continue;
+			}
+
+			// Get default product for this component.
+			$default_option_id = $component_obj->get_default_option();
+			$default_quantity = $component_obj->get_quantity( 'min' );
+
+			// If selected product or quantity differs from default, it's custom.
+			if ( $selected_product_id != $default_option_id || $selected_quantity != $default_quantity ) {
+				return false; // Custom configuration detected.
+			}
+		}
+
+		// All selections match defaults.
+		return true;
 	}
 
 	/**

@@ -135,6 +135,11 @@ $_GET['wccp_quantity_1'] = 2;    // With quantity 2
 - Sets up `$_GET` parameters that WooCommerce understands
 - Converts mapped IDs into real composite configurations
 
+**Smart URL Generation**:
+- ✅ Default configuration: `?products=139:1` (simple, no mapping needed)
+- ✅ Custom configuration: `?products=cp139_3e3a7ecc:1` (uses mapping system)
+- Benefits: Simpler URLs when possible, less database storage, better debugging
+
 ### Next Steps
 
 We'll continue building:
