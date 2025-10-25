@@ -9,8 +9,13 @@
 import CompositeProductConfig from './components/CompositeProductConfig';
 
 // Make the component available globally for Link Wizard.
-window.LWWCCompositeUI = window.LWWCCompositeUI || {};
-window.LWWCCompositeUI.CompositeProductConfig = CompositeProductConfig;
+// Link Wizard expects window.LWWCAddons.ComplexProductUI.
+if (typeof window.LWWCAddons === 'undefined') {
+    window.LWWCAddons = {};
+}
 
-console.log('Link Wizard Composite: UI components loaded');
+// Register our composite configuration UI as the ComplexProductUI.
+window.LWWCAddons.ComplexProductUI = CompositeProductConfig;
+
+console.log('Link Wizard Composite: ComplexProductUI component registered globally');
 
