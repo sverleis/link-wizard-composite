@@ -53,12 +53,25 @@ class LWWC_Composite_URL_Mapper {
 		// Create the database table on plugin activation.
 		add_action( 'init', array( $this, 'maybe_create_table' ), 1 );
 
-		// Intercept checkout-link requests to process our mapped URLs.
-		// Use 'wp' hook with priority 0 to run before WooCommerce processes the request.
-		// This is critical - we must set $_GET parameters before WooCommerce reads them.
-		add_action( 'wp', array( $this, 'handle_checkout_link' ), 0 );
+		// Add rewrite endpoint for composite checkout links.
+		add_action( 'init', array( $this, 'add_rewrite_endpoint' ) );
+
+		// Intercept composite checkout-link requests BEFORE WooCommerce's handler.
+		// Priority 1 ensures we run before WooCommerce at priority 10.
+		add_action( 'template_redirect', array( $this, 'handle_checkout_link' ), 1 );
 
 		error_log( 'Link Wizard for Composites: URL Mapper initialized' );
+	}
+
+	/**
+	 * Add rewrite endpoint for composite checkout links.
+	 *
+	 * This allows us to use /checkout-link/ for composite products
+	 * while still intercepting them before WooCommerce processes them.
+	 */
+	public function add_rewrite_endpoint() {
+		// We don't need a custom rewrite rule - we use WooCommerce's /checkout-link/
+		// but intercept composite product requests before WooCommerce processes them.
 	}
 
 	/**
@@ -117,32 +130,14 @@ class LWWC_Composite_URL_Mapper {
 	 * → "http://site.com/checkout-link/?products=cp139_3e3a7ecc:1"
 	 */
 	public function generate_facebook_url( $product_id, $configuration, $quantity = 1 ) {
-		// IMPORTANT: WooCommerce's /checkout-link/ feature does NOT support composite products.
-		// It only works for simple products with no configuration needed.
-		//
-		// Instead, we use the ?add-to-cart=ID format with component parameters.
-		// This format:
-		// - Works with composite products
-		// - Adds product to cart with correct configuration
-		// - Redirects to cart/checkout based on WooCommerce settings
-		
-		// Build add-to-cart URL with component parameters.
-		$url = home_url( '/?add-to-cart=' . $product_id );
-		
-		// Add component selections.
-		if ( isset( $configuration['components'] ) && ! empty( $configuration['components'] ) ) {
-			foreach ( $configuration['components'] as $component_id => $component_data ) {
-				if ( isset( $component_data['product_id'] ) ) {
-					$url .= '&wccp_component_selection%5B' . $component_id . '%5D=' . $component_data['product_id'];
-					$url .= '&wccp_component_quantity%5B' . $component_id . '%5D=' . ( $component_data['quantity'] ?? 1 );
-				}
-			}
-		}
-		
-		// Add main product quantity.
-		$url .= '&quantity=' . $quantity;
+		// Create or retrieve the mapping ID for this configuration.
+		$mapping_id = $this->create_mapping( $product_id, $configuration );
 
-		return $url;
+		// Generate Facebook/META-compatible checkout-link URL.
+		// Format: /checkout-link/?products=cp139_abc123:1
+		// This format is REQUIRED by Facebook Commerce Platform.
+		$base_url = home_url( '/checkout-link/' );
+		return add_query_arg( 'products', $mapping_id . ':' . $quantity, $base_url );
 	}
 
 	/**
@@ -247,119 +242,159 @@ class LWWC_Composite_URL_Mapper {
 	 * We replace "cp139_3e3a7ecc" with the actual composite configuration.
 	 */
 	public function handle_checkout_link() {
+		// Prevent double processing.
+		static $processed = false;
+		if ( $processed ) {
+			return;
+		}
+		
 		// Check if this is a checkout-link request.
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Public checkout link, no nonce needed.
 		if ( ! isset( $_GET['products'] ) ) {
 			return; // Not a checkout-link, do nothing.
 		}
 
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$products_param = sanitize_text_field( wp_unslash( $_GET['products'] ) );
+
+		error_log( 'Link Wizard for Composites: Checking products param: ' . $products_param );
 
 		// Check if this contains a composite mapping (cp prefix).
 		if ( strpos( $products_param, 'cp' ) === false ) {
+			error_log( 'Link Wizard for Composites: No cp prefix found, skipping' );
 			return; // No composite mapping, do nothing.
 		}
 
-		// Parse products parameter (could have multiple products: "cp139_abc:1,18:2").
-		$products = explode( ',', $products_param );
-		$new_products = array();
+		$processed = true;
+		error_log( 'Link Wizard for Composites: Found composite mapping, processing...' );
 
+		// Check if we have any composite mappings to process.
+		$has_composite = false;
+		$products = explode( ',', $products_param );
+		
 		foreach ( $products as $product_string ) {
 			list( $id, $quantity ) = explode( ':', $product_string );
-
-			// Check if this is a composite mapping.
 			if ( strpos( $id, 'cp' ) === 0 ) {
-				// This is a composite mapping - process it.
-				$this->setup_composite_data( $id );
-
-				// Replace mapping ID with actual product ID.
+				$has_composite = true;
+				
+				// Process the composite mapping.
 				$config = $this->get_configuration( $id );
-				if ( $config ) {
-					$new_products[] = $config['product_id'] . ':' . $quantity;
+				if ( ! $config ) {
+					error_log( 'Link Wizard for Composites: Configuration not found for ' . $id );
+					continue;
 				}
-			} else {
-				// Regular product, keep as is.
-				$new_products[] = $product_string;
-			}
-		}
 
-		// Update the products parameter with actual product IDs.
-		if ( ! empty( $new_products ) ) {
-			$_GET['products'] = implode( ',', $new_products );
+				// Get the composite product.
+				$product = wc_get_product( $config['product_id'] );
+				if ( ! $product || ! $product->is_type( 'composite' ) ) {
+					error_log( 'Link Wizard for Composites: Product not found or not composite' );
+					continue;
+				}
+
+				error_log( 'Link Wizard for Composites: Found composite product, adding to cart...' );
+
+				// Ensure WooCommerce session is initialized.
+				if ( is_null( WC()->session ) ) {
+					WC()->initialize_session();
+				}
+
+				// Clear cart and add the composite product.
+				WC()->cart->empty_cart();
+				
+				$added = $this->add_composite_to_cart( $product, $config['configuration'], $quantity );
+				
+				if ( $added ) {
+					error_log( 'Link Wizard for Composites: Added to cart successfully, cart contents: ' . count( WC()->cart->get_cart() ) . ' items' );
+					
+					// Calculate cart totals to ensure everything is ready.
+					WC()->cart->calculate_totals();
+					
+					// Apply coupon if provided.
+					if ( isset( $config['configuration']['coupon'] ) && ! empty( $config['configuration']['coupon'] ) ) {
+						WC()->cart->apply_coupon( sanitize_text_field( $config['configuration']['coupon'] ) );
+					}
+					
+					// CRITICAL: Persist the cart session.
+					// This ensures the cart is saved before we redirect.
+					WC()->session->set( 'cart', WC()->cart->get_cart_for_session() );
+					WC()->session->set( 'cart_totals', WC()->cart->get_totals() );
+					
+					// Save the session data.
+					if ( method_exists( WC()->session, 'save_data' ) ) {
+						WC()->session->save_data();
+					}
+					
+					// CRITICAL: Remove the products parameter so WooCommerce's handler doesn't process it.
+					// This prevents WooCommerce from trying to add the composite product again.
+					unset( $_GET['products'] );
+					unset( $_REQUEST['products'] );
+					
+					// Redirect to checkout.
+					error_log( 'Link Wizard for Composites: Redirecting to checkout: ' . wc_get_checkout_url() );
+					wp_safe_redirect( wc_get_checkout_url() );
+					exit;
+				} else {
+					error_log( 'Link Wizard for Composites: Failed to add to cart' );
+				}
+			}
 		}
 	}
 
 	/**
-	 * Set up composite product data from a mapping ID.
+	 * Add composite product to cart with configuration.
 	 *
-	 * THE CRITICAL STEP:
-	 * When someone visits checkout-link/?products=cp139_3e3a7ecc:1
-	 * We need to tell WooCommerce Composite Products:
-	 * "Hey, for component 1, use product 72 with quantity 2"
-	 * "And for component 2, use product 86 with quantity 1"
+	 * This manually adds the composite product to the cart using WooCommerce's
+	 * add_to_cart() method with the composite_data parameter.
 	 *
-	 * HOW WE DO IT:
-	 * WooCommerce Composite Products reads $_GET parameters like:
-	 * - wccp_component_{component_id} = product_id
-	 * - wccp_quantity_{component_id} = quantity
-	 *
-	 * We set these parameters so WooCommerce sees them and configures the composite.
-	 *
-	 * @param string $mapping_id The mapping ID.
+	 * @param WC_Product $product       The composite product.
+	 * @param array      $configuration The configuration with components.
+	 * @param int        $quantity      Product quantity.
+	 * @return bool|string Cart item key on success, false on failure.
 	 */
-	private function setup_composite_data( $mapping_id ) {
-		// Get configuration from mapping.
-		$config = $this->get_configuration( $mapping_id );
-
-		if ( ! $config ) {
-			error_log( 'Link Wizard for Composites: No configuration found for ' . $mapping_id );
-			return; // Configuration not found.
-		}
-
-		$product_id = $config['product_id'];
-		$configuration = $config['configuration'];
-
-		error_log( 'Link Wizard for Composites: Processing mapping ' . $mapping_id . ' for product ' . $product_id );
-
-		// Get the components from the configuration.
-		if ( ! isset( $configuration['components'] ) ) {
-			error_log( 'Link Wizard for Composites: No components in configuration!' );
-			return; // No components configured.
-		}
-
-		$components = $configuration['components'];
-		error_log( 'Link Wizard for Composites: Found ' . count( $components ) . ' components to configure' );
-
-		// Set up $_GET parameters for each component.
-		// WooCommerce Composite Products will read these and configure the product.
-		foreach ( $components as $component_id => $component_data ) {
-			if ( ! isset( $component_data['product_id'] ) ) {
-				continue;
+	private function add_composite_to_cart( $product, $configuration, $quantity = 1 ) {
+		// Build cart item data with composite configuration.
+		$cart_item_data = array();
+		
+		// Format the components for WooCommerce Composite Products.
+		if ( isset( $configuration['components'] ) && ! empty( $configuration['components'] ) ) {
+			$cart_item_data['composite_data'] = array();
+			
+			foreach ( $configuration['components'] as $component_id => $component_data ) {
+				if ( isset( $component_data['product_id'] ) ) {
+					$cart_item_data['composite_data'][ $component_id ] = array(
+						'product_id' => absint( $component_data['product_id'] ),
+						'quantity'   => isset( $component_data['quantity'] ) ? absint( $component_data['quantity'] ) : 1,
+					);
+				}
 			}
-
-			$selected_product_id = $component_data['product_id'];
-			$quantity = isset( $component_data['quantity'] ) ? $component_data['quantity'] : 1;
-
-			// Set component selection parameter.
-			// WooCommerce Composite Products expects: wccp_component_selection[{component_id}] = product_id
-			if ( ! isset( $_REQUEST['wccp_component_selection'] ) ) {
-				$_REQUEST['wccp_component_selection'] = array();
-			}
-			$_REQUEST['wccp_component_selection'][ $component_id ] = $selected_product_id;
-			$_GET['wccp_component_selection'][ $component_id ] = $selected_product_id;
-
-			// Set quantity parameter.
-			// WooCommerce Composite Products expects: wccp_component_quantity[{component_id}] = quantity
-			if ( ! isset( $_REQUEST['wccp_component_quantity'] ) ) {
-				$_REQUEST['wccp_component_quantity'] = array();
-			}
-			$_REQUEST['wccp_component_quantity'][ $component_id ] = $quantity;
-			$_GET['wccp_component_quantity'][ $component_id ] = $quantity;
-
-			error_log( "Link Wizard for Composites: Set component {$component_id} to product {$selected_product_id} with quantity {$quantity}" );
 		}
-
-		error_log( 'Link Wizard for Composites: Composite data configured for checkout' );
+		
+		error_log( 'Link Wizard for Composites: Cart item data: ' . wp_json_encode( $cart_item_data ) );
+		
+		// Add to cart using WooCommerce's method.
+		try {
+			$cart_item_key = WC()->cart->add_to_cart(
+				$product->get_id(),
+				$quantity,
+				0,  // Variation ID (not used for composites).
+				array(),  // Variation attributes (not used for composites).
+				$cart_item_data  // This contains our composite_data.
+			);
+			
+			error_log( 'Link Wizard for Composites: Cart item key: ' . ( $cart_item_key ? $cart_item_key : 'FALSE' ) );
+			
+			return $cart_item_key;
+		} catch ( Exception $e ) {
+			error_log( 'Link Wizard for Composites: Error adding to cart - ' . $e->getMessage() );
+			return false;
+		}
 	}
+
 }
+
+
+
+
+
 
 
