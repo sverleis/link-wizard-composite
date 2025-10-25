@@ -43,6 +43,15 @@ class LWWC_Composite_Admin {
 			return;
 		}
 
+		// Enqueue integration script first (plain JavaScript, no dependencies).
+		wp_enqueue_script(
+			'lwwc-composite-integration',
+			LWWC_COMPOSITE_URL . 'admin/js/composite-integration.js',
+			array(), // No dependencies - loads immediately.
+			LWWC_COMPOSITE_VERSION,
+			false // Load in head so it's available early.
+		);
+
 		// Enqueue our React component.
 		$asset_file = LWWC_COMPOSITE_PATH . 'admin/build/composite-admin.asset.php';
 		
