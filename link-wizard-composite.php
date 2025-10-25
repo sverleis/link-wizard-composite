@@ -27,6 +27,15 @@ define( 'LWWC_COMPOSITE_PATH', plugin_dir_path( __FILE__ ) );
 define( 'LWWC_COMPOSITE_URL', plugin_dir_url( __FILE__ ) );
 
 /**
+ * Declare compatibility with WooCommerce features.
+ */
+add_action( 'before_woocommerce_init', function() {
+	if ( class_exists( \Automattic\WooCommerce\Utilities\FeaturesUtil::class ) ) {
+		\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', __FILE__, true );
+	}
+} );
+
+/**
  * Initialize the plugin.
  */
 function lwwc_composite_init() {
