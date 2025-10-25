@@ -61,7 +61,7 @@ class LWWC_Composite_Admin {
 			wp_enqueue_script(
 				'lwwc-composite-admin',
 				LWWC_COMPOSITE_URL . 'admin/build/composite-admin.js',
-				array_merge( $asset['dependencies'], array( 'wp-api-fetch', 'wp-components', 'wp-element' ) ),
+				$asset['dependencies'], // Use only the dependencies from the asset file.
 				$asset['version'],
 				true
 			);
