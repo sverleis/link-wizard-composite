@@ -45,7 +45,8 @@ class LWWC_Composite_Handler {
 		// Initialize REST API endpoints (Step 5).
 		$this->init_rest_api();
 
-		// TODO: Enqueue admin assets (Step 6).
+		// Enqueue admin assets (Step 6).
+		$this->init_admin_assets();
 	}
 
 	/**
@@ -76,6 +77,21 @@ class LWWC_Composite_Handler {
 		$rest_api->init();
 
 		error_log( 'Link Wizard for Composites: REST API loaded' );
+	}
+
+	/**
+	 * Initialize the admin assets handler.
+	 *
+	 * Loads and initializes the admin assets class for enqueueing scripts.
+	 * This is called during plugin initialization.
+	 */
+	private function init_admin_assets() {
+		require_once LWWC_COMPOSITE_PATH . 'admin/class-lwwc-composite-admin.php';
+		
+		$admin = new LWWC_Composite_Admin();
+		$admin->init();
+
+		error_log( 'Link Wizard for Composites: Admin assets loaded' );
 	}
 
 	/**

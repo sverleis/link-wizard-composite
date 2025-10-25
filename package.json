@@ -1,0 +1,27 @@
+{
+  "name": "link-wizard-composite",
+  "version": "1.0.0",
+  "description": "Addon for Link Wizard that adds support for WooCommerce Composite Products",
+  "private": true,
+  "scripts": {
+    "build": "wp-scripts build admin/src/index.js --output-path=admin/build --output-filename=composite-admin.js",
+    "start": "wp-scripts start admin/src/index.js --output-path=admin/build --output-filename=composite-admin.js"
+  },
+  "keywords": [
+    "wordpress",
+    "woocommerce",
+    "composite-products",
+    "link-wizard"
+  ],
+  "author": "Mags Industries",
+  "license": "GPL-2.0-or-later",
+  "devDependencies": {
+    "@wordpress/scripts": "^26.0.0"
+  },
+  "dependencies": {
+    "@wordpress/api-fetch": "^6.0.0",
+    "@wordpress/components": "^25.0.0",
+    "@wordpress/element": "^5.0.0"
+  }
+}
+
