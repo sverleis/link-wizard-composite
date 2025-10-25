@@ -139,17 +139,19 @@ This allows:
 
 ## 🐛 Known Issues
 
-### **Translation Loading Notice** (WordPress 6.7+)
-When both link-wizard-addons and link-wizard-composite are disabled:
+### **Translation Loading Notice** (WordPress 6.7+) - FIXED! ✅
+Previously when both addons were disabled:
 ```
 Notice: Function _load_textdomain_just_in_time was called incorrectly...
 ```
 
-**Analysis**: This notice is about WooCommerce translations being loaded too early, not Link Wizard translations.
+**Root Cause**: Core plugin was requiring class file outside the `init` hook
 
-**Status**: Investigating - may be from WooCommerce itself or another plugin
+**Fix**: Moved `require_once` statement inside the `init` hook callback function
 
-**Impact**: None - just a notice, not an error. Functionality works perfectly.
+**Status**: ✅ RESOLVED in core plugin (feature/product-bundles branch)
+
+**Impact**: None - issue is fixed, notice no longer appears
 
 ---
 
