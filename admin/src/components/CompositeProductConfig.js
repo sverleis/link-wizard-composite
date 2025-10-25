@@ -1,4 +1,4 @@
-import { useState, useEffect, createElement } from '@wordpress/element';
+import React, { Component } from 'react';
 import apiFetch from '@wordpress/api-fetch';
 
 /**
@@ -15,46 +15,49 @@ import apiFetch from '@wordpress/api-fetch';
  * @param {Function} onUpdate - Callback when user updates configuration
  * @param {Function} onCancel - Callback when user cancels
  */
-const CompositeProductConfig = ({ product, onUpdate, onCancel }) => {
-    const [components, setComponents] = useState([]);
-    const [selections, setSelections] = useState({});
-    const [isLoading, setIsLoading] = useState(true);
-    const [calculatedPrice, setCalculatedPrice] = useState(null);
-    const [isCalculating, setIsCalculating] = useState(false);
+class CompositeProductConfig extends Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            components: [],
+            selections: {},
+            isLoading: true,
+            calculatedPrice: null,
+            isCalculating: false
+        };
+    }
 
-    // Load composite product data when component mounts.
-    useEffect(() => {
-        loadCompositeData();
-    }, [product.id]);
+    componentDidMount() {
+        this.loadCompositeData();
+    }
 
-    // Calculate price whenever selections change.
-    useEffect(() => {
-        if (Object.keys(selections).length > 0) {
-            calculatePrice();
+    componentDidUpdate(prevProps, prevState) {
+        // Calculate price when selections change.
+        if (prevState.selections !== this.state.selections && Object.keys(this.state.selections).length > 0) {
+            this.calculatePrice();
         }
-    }, [selections]);
+    }
 
     /**
      * Load composite product data from REST API.
      */
-    const loadCompositeData = async () => {
-        setIsLoading(true);
+    loadCompositeData = async () => {
+        this.setState({ isLoading: true });
 
         try {
             const data = await apiFetch({
-                path: `/lwwc-composite/v1/product/${product.id}`
+                path: `/lwwc-composite/v1/product/${this.props.product.id}`
             });
 
             console.log('Composite product data loaded:', data);
 
             if (data.components) {
-                setComponents(data.components);
+                this.setState({ components: data.components });
 
-                // Initialize selections with default options.
+                // Initialize selections with first/default option for each component.
                 const initialSelections = {};
                 data.components.forEach(component => {
                     if (component.options && component.options.length > 0) {
-                        // Use first option as default.
                         const defaultOption = component.options[0];
                         initialSelections[component.id] = {
                             product_id: defaultOption.id,
@@ -63,63 +66,67 @@ const CompositeProductConfig = ({ product, onUpdate, onCancel }) => {
                     }
                 });
 
-                setSelections(initialSelections);
+                this.setState({ selections: initialSelections });
             }
         } catch (error) {
             console.error('Error loading composite product data:', error);
         } finally {
-            setIsLoading(false);
+            this.setState({ isLoading: false });
         }
     };
 
     /**
      * Calculate price based on current selections.
      */
-    const calculatePrice = async () => {
-        setIsCalculating(true);
+    calculatePrice = async () => {
+        this.setState({ isCalculating: true });
 
         try {
             const response = await apiFetch({
                 path: '/lwwc-composite/v1/calculate-price',
                 method: 'POST',
                 data: {
-                    product_id: product.id,
-                    component_selections: selections
+                    product_id: this.props.product.id,
+                    component_selections: this.state.selections
                 }
             });
 
             if (response.price_html) {
-                setCalculatedPrice(response.price_html);
+                this.setState({ calculatedPrice: response.price_html });
             }
         } catch (error) {
             console.error('Error calculating price:', error);
         } finally {
-            setIsCalculating(false);
+            this.setState({ isCalculating: false });
         }
     };
 
     /**
-     * Handle component selection change.
+     * Handle component option selection change.
      */
-    const handleComponentChange = (componentId, productId) => {
-        setSelections(prev => ({
-            ...prev,
-            [componentId]: {
-                ...prev[componentId],
-                product_id: parseInt(productId)
+    handleOptionChange = (componentId, productId) => {
+        this.setState(prevState => ({
+            selections: {
+                ...prevState.selections,
+                [componentId]: {
+                    ...prevState.selections[componentId],
+                    product_id: parseInt(productId)
+                }
             }
         }));
     };
 
     /**
-     * Handle quantity change.
+     * Handle component quantity change.
      */
-    const handleQuantityChange = (componentId, quantity) => {
-        setSelections(prev => ({
-            ...prev,
-            [componentId]: {
-                ...prev[componentId],
-                quantity: parseInt(quantity)
+    handleQuantityChange = (componentId, quantity) => {
+        this.setState(prevState => ({
+            selections: {
+                ...prevState.selections,
+                [componentId]: {
+                    ...prevState.selections[componentId],
+                    quantity: parseInt(quantity)
+                }
             }
         }));
     };
@@ -127,27 +134,26 @@ const CompositeProductConfig = ({ product, onUpdate, onCancel }) => {
     /**
      * Handle Update Product button click.
      */
-    const handleUpdate = async () => {
-        // Generate checkout URL with custom configuration.
+    handleUpdate = async () => {
         try {
             const response = await apiFetch({
                 path: '/lwwc-composite/v1/generate-url',
                 method: 'POST',
                 data: {
-                    product_id: product.id,
-                    component_selections: selections,
+                    product_id: this.props.product.id,
+                    component_selections: this.state.selections,
                     quantity: 1
                 }
             });
 
             if (response.checkout_url) {
-                // Update the product with new URL and configuration.
-                onUpdate({
-                    ...product,
+                // Call the onUpdate callback with the updated product data.
+                this.props.onUpdate({
+                    ...this.props.product,
                     checkout_url: response.checkout_url,
                     url: response.checkout_url,
-                    component_selections: selections,
-                    calculated_price: calculatedPrice
+                    component_selections: this.state.selections,
+                    calculated_price: this.state.calculatedPrice
                 });
             }
         } catch (error) {
@@ -155,107 +161,113 @@ const CompositeProductConfig = ({ product, onUpdate, onCancel }) => {
         }
     };
 
-    if (isLoading) {
+    render() {
+        const { product, onCancel } = this.props;
+        const { components, selections, isLoading, calculatedPrice, isCalculating } = this.state;
+
+        if (isLoading) {
+            return (
+                <div className="lwwc-composite-config-loading">
+                    <span className="spinner is-active"></span>
+                    Loading composite product configuration...
+                </div>
+            );
+        }
+
         return (
-            <div className="lwwc-composite-config-loading">
-                <span className="spinner is-active"></span>
-                Loading composite product configuration...
+            <div className="lwwc-composite-config">
+                <div className="lwwc-composite-config-header">
+                    <h3>Configure: {product.name}</h3>
+                    {calculatedPrice && (
+                        <div className="lwwc-composite-config-price">
+                            <strong>Total Price: </strong>
+                            <span dangerouslySetInnerHTML={{ __html: calculatedPrice }} />
+                            {isCalculating && (
+                                <span className="spinner is-active" style={{ float: 'none', marginLeft: '8px' }}></span>
+                            )}
+                        </div>
+                    )}
+                </div>
+
+                <div className="lwwc-composite-config-components">
+                    {components.map(component => (
+                        <div key={component.id} className="lwwc-composite-config-component">
+                            <label className="lwwc-composite-config-component-label">
+                                <strong>{component.title}</strong>
+                                {component.description && (
+                                    <span className="lwwc-composite-config-component-description">
+                                        {component.description}
+                                    </span>
+                                )}
+                            </label>
+
+                            <div className="lwwc-composite-config-component-controls">
+                                {/* Component selection dropdown (if multiple options) */}
+                                {component.options && component.options.length > 1 ? (
+                                    <select
+                                        className="lwwc-composite-config-component-select"
+                                        value={selections[component.id]?.product_id || ''}
+                                        onChange={(e) => this.handleOptionChange(component.id, e.target.value)}
+                                    >
+                                        {component.options.map(option => (
+                                            <option key={option.id} value={option.id}>
+                                                {option.name}
+                                                {option.price && ` - ${option.price}`}
+                                            </option>
+                                        ))}
+                                    </select>
+                                ) : component.options && component.options.length === 1 ? (
+                                    <div className="lwwc-composite-config-single-option">
+                                        {component.options[0].name}
+                                        {component.options[0].price && ` - ${component.options[0].price}`}
+                                    </div>
+                                ) : (
+                                    <div className="lwwc-composite-config-no-options">
+                                        No options available
+                                    </div>
+                                )}
+
+                                {/* Quantity input */}
+                                <div className="lwwc-composite-config-quantity">
+                                    <label>Qty:</label>
+                                    <input
+                                        type="number"
+                                        min={component.quantity.min}
+                                        max={component.quantity.max}
+                                        value={selections[component.id]?.quantity || component.quantity.min}
+                                        onChange={(e) => this.handleQuantityChange(component.id, e.target.value)}
+                                        className="lwwc-composite-config-quantity-input"
+                                    />
+                                    <span className="lwwc-composite-config-quantity-range">
+                                        (Min: {component.quantity.min}, Max: {component.quantity.max})
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                <div className="lwwc-composite-config-actions">
+                    <button
+                        type="button"
+                        className="button button-primary lwwc-composite-config-update"
+                        onClick={this.handleUpdate}
+                    >
+                        <span className="dashicons dashicons-yes"></span>
+                        Update Product
+                    </button>
+                    <button
+                        type="button"
+                        className="button button-secondary lwwc-composite-config-cancel"
+                        onClick={onCancel}
+                    >
+                        <span className="dashicons dashicons-no"></span>
+                        Cancel
+                    </button>
+                </div>
             </div>
         );
     }
-
-    return (
-        <div className="lwwc-composite-config">
-            <div className="lwwc-composite-config-header">
-                <h3>Configure: {product.name}</h3>
-                {calculatedPrice && (
-                    <div className="lwwc-composite-config-price">
-                        <strong>Total Price: </strong>
-                        <span dangerouslySetInnerHTML={{ __html: calculatedPrice }}></span>
-                        {isCalculating && <span className="spinner is-active" style={{ float: 'none', marginLeft: '8px' }}></span>}
-                    </div>
-                )}
-            </div>
-
-            <div className="lwwc-composite-config-components">
-                {components.map(component => (
-                    <div key={component.id} className="lwwc-composite-config-component">
-                        <label className="lwwc-composite-config-component-label">
-                            <strong>{component.title}</strong>
-                            {component.description && (
-                                <span className="lwwc-composite-config-component-description">
-                                    {component.description}
-                                </span>
-                            )}
-                        </label>
-
-                        <div className="lwwc-composite-config-component-controls">
-                            {/* Component Product Dropdown */}
-                            {component.options && component.options.length > 1 ? (
-                                <select
-                                    className="lwwc-composite-config-component-select"
-                                    value={selections[component.id]?.product_id || ''}
-                                    onChange={(e) => handleComponentChange(component.id, e.target.value)}
-                                >
-                                    {component.options.map(option => (
-                                        <option key={option.id} value={option.id}>
-                                            {option.name}
-                                            {option.price && ` - ${option.price}`}
-                                        </option>
-                                    ))}
-                                </select>
-                            ) : component.options && component.options.length === 1 ? (
-                                <div className="lwwc-composite-config-single-option">
-                                    {component.options[0].name}
-                                    {component.options[0].price && ` - ${component.options[0].price}`}
-                                </div>
-                            ) : (
-                                <div className="lwwc-composite-config-no-options">
-                                    No options available
-                                </div>
-                            )}
-
-                            {/* Quantity Selector */}
-                            <div className="lwwc-composite-config-quantity">
-                                <label>Qty:</label>
-                                <input
-                                    type="number"
-                                    min={component.quantity.min}
-                                    max={component.quantity.max}
-                                    value={selections[component.id]?.quantity || component.quantity.min}
-                                    onChange={(e) => handleQuantityChange(component.id, e.target.value)}
-                                    className="lwwc-composite-config-quantity-input"
-                                />
-                                <span className="lwwc-composite-config-quantity-range">
-                                    (Min: {component.quantity.min}, Max: {component.quantity.max})
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                ))}
-            </div>
-
-            <div className="lwwc-composite-config-actions">
-                <button
-                    type="button"
-                    className="button button-primary lwwc-composite-config-update"
-                    onClick={handleUpdate}
-                >
-                    <span className="dashicons dashicons-yes"></span>
-                    Update Product
-                </button>
-                <button
-                    type="button"
-                    className="button button-secondary lwwc-composite-config-cancel"
-                    onClick={onCancel}
-                >
-                    <span className="dashicons dashicons-no"></span>
-                    Cancel
-                </button>
-            </div>
-        </div>
-    );
-};
+}
 
 export default CompositeProductConfig;
-
