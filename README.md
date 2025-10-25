@@ -257,11 +257,93 @@ const priceData = await apiFetch({
 - Uses existing product handler for business logic
 - Ready for frontend React components to consume
 
+### Step 6: Configuration UI ✅
+
+**Files**: 
+- `admin/src/components/CompositeProductConfig.js` (React component)
+- `admin/js/composite-integration.js` (Integration layer)
+- `admin/class-lwwc-composite-admin.php` (Asset enqueuing)
+- `webpack.config.js` (Build configuration)
+
+**What it does**:
+- Provides a React-based UI for configuring composite products
+- Integrates with Link Wizard's ProductSelect component
+- Shows component dropdowns, quantity selectors, and live price updates
+- Generates custom checkout URLs based on user selections
+
+**Key Learning Points**:
+1. **Class Components**: Using React.Component instead of hooks to avoid context issues
+2. **Integration Layer**: Providing functions Link Wizard expects (toggleProductExpansion)
+3. **Global Registration**: Exporting to window.LWWCAddons.ComplexProductUI
+4. **Webpack Externals**: Preventing React bundling conflicts
+5. **Lifecycle Methods**: componentDidMount, componentDidUpdate for data loading
+
+**The Integration Challenge**:
+- Link Wizard bundles its own React from the 'react' package
+- Functional components with hooks (useState, useEffect) have context issues
+- Solution: Use class components with lifecycle methods
+- Pattern matches link-wizard-addons ComplexProductUI implementation
+
+**UI Features**:
+- ✅ Component selection dropdowns (when multiple options available)
+- ✅ Single option display (when only one choice)
+- ✅ Quantity inputs with min/max validation
+- ✅ Real-time price calculation as user changes selections
+- ✅ "Update Product" button to apply configuration
+- ✅ "Cancel" button to close configuration panel
+- ✅ Loading states for data fetching and price calculation
+- ✅ Proper React integration with Link Wizard
+
+**User Experience**:
+1. User searches for composite product
+2. Clicks "+ Add" → Product added with defaults
+3. OR clicks "Configure" → UI expands showing components
+4. User selects options and quantities
+5. Price updates in real-time
+6. Clicks "Update Product" → Custom URL generated
+7. Product added to selected products with custom configuration
+
+**Technical Architecture**:
+```javascript
+class CompositeProductConfig extends Component {
+  // State management
+  state = {
+    components: [],
+    selections: {},
+    isLoading: true,
+    calculatedPrice: null
+  }
+  
+  // Data loading
+  componentDidMount() { this.loadCompositeData(); }
+  
+  // Price calculation on changes
+  componentDidUpdate(prevProps, prevState) {
+    if (prevState.selections !== this.state.selections) {
+      this.calculatePrice();
+    }
+  }
+  
+  // Render component UI
+  render() { /* Component selection dropdowns, quantities, buttons */ }
+}
+```
+
+**Integration Points**:
+- Registered as `window.LWWCAddons.ComplexProductUI`
+- Provides `toggleProductExpansion()` via composite-integration.js
+- Uses REST API endpoints for data, price, and URL generation
+- Enqueued only on Link Wizard admin pages
+
+**Note**: UI styling is minimal and functional. Visual polish can be added later.
+
 ### Next Steps
 
-We'll continue building:
-- **Step 6**: Admin UI (component selection interface)
-- **Step 7**: Price calculation enhancement (using WooCommerce's native methods)
+Future enhancements:
+- **Step 7**: CSS styling for configuration UI
+- **Step 8**: Validation for required components
+- **Step 9**: Loading state improvements
+- **Step 10**: Error handling and user feedback
 
 Each step will be explained clearly so you understand exactly what's happening!
 
@@ -281,11 +363,13 @@ Each step will be explained clearly so you understand exactly what's happening!
 - ✅ **Search functionality - Composite products now appear in Link Wizard!**
 - ✅ **Default configuration support - Products work immediately without setup!**
 - ✅ **REST API endpoints - Frontend can now communicate with backend!**
+- ✅ **Configuration UI - React component for custom component selection!**
+- ✅ **Full integration with Link Wizard - Seamless user experience!**
 
 **Coming Next**:
-- ⏳ Admin UI (component selection interface)
-- ⏳ Frontend integration with Link Wizard
-- ⏳ Price calculation enhancement
+- ⏳ CSS styling for configuration UI (functional UI exists, needs visual polish)
+- ⏳ Component validation and error handling
+- ⏳ Testing and refinement
 
 ## License
 
