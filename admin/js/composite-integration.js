@@ -17,13 +17,18 @@
      * Initialize the complex products integration.
      */
     function initCompositeIntegration() {
-        // Wait for Link Wizard to be ready.
-        if (typeof window.lwwcComplexProducts === 'undefined') {
-            window.lwwcComplexProducts = {};
+        // Initialize the LWWCAddons global object if it doesn't exist.
+        if (typeof window.LWWCAddons === 'undefined') {
+            window.LWWCAddons = {};
+        }
+
+        // Initialize complexProducts if it doesn't exist.
+        if (typeof window.LWWCAddons.complexProducts === 'undefined') {
+            window.LWWCAddons.complexProducts = {};
         }
 
         // Add our composite product functionality to the global object.
-        window.lwwcComplexProducts.toggleProductExpansion = function(productId) {
+        window.LWWCAddons.complexProducts.toggleProductExpansion = function(productId) {
             console.log('Link Wizard Composite: toggleProductExpansion called for product', productId);
             
             // Manage expanded state.
@@ -40,14 +45,14 @@
             }
 
             // Trigger re-render if callback is set.
-            if (window.lwwcComplexProducts.onStateChange) {
-                window.lwwcComplexProducts.onStateChange();
+            if (window.LWWCAddons.complexProducts.onStateChange) {
+                window.LWWCAddons.complexProducts.onStateChange();
             }
 
             return window.lwwcCompositeExpandedProducts.has(productId);
         };
 
-        window.lwwcComplexProducts.isProductExpanded = function(productId) {
+        window.LWWCAddons.complexProducts.isProductExpanded = function(productId) {
             if (!window.lwwcCompositeExpandedProducts) {
                 return false;
             }
@@ -55,7 +60,7 @@
         };
 
         console.log('Link Wizard Composite: Complex products integration initialized');
-        console.log('Link Wizard Composite: toggleProductExpansion available:', typeof window.lwwcComplexProducts.toggleProductExpansion);
+        console.log('Link Wizard Composite: toggleProductExpansion available:', typeof window.LWWCAddons.complexProducts.toggleProductExpansion);
     }
 
     // Initialize when DOM is ready.
