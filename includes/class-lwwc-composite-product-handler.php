@@ -71,6 +71,12 @@ class LWWC_Composite_Product_Handler implements LWWC_Product_Handler_Interface {
 			$data['components'] = $components;
 		}
 
+		// Get default component selections (so pills can be shown for default option).
+		$default_selections = $this->get_default_component_selections( $product );
+		if ( ! empty( $default_selections ) ) {
+			$data['component_selections'] = $default_selections;
+		}
+
 		// Generate checkout URL (will be updated when user configures).
 		$data['checkout_url'] = $this->generate_checkout_url( $product, array() );
 
@@ -261,8 +267,13 @@ class LWWC_Composite_Product_Handler implements LWWC_Product_Handler_Interface {
 			$default_option = $component_obj->get_default_option();
 
 			if ( $default_option ) {
+				// Get the product name for the default option.
+				$option_product = wc_get_product( $default_option );
+				$option_name    = $option_product ? $option_product->get_name() : '';
+
 				$default_selections[ $component_id ] = array(
 					'product_id' => $default_option,
+					'name'       => $option_name, // Include product name.
 					'quantity'   => $component_obj->get_quantity( 'min' ), // Use minimum quantity as default.
 				);
 			}
