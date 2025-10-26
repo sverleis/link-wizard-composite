@@ -369,14 +369,33 @@ class CompositeProductConfig extends Component {
                                 )}
 
                                 {/* Variable Product Selector (using shared component from core plugin) */}
-                                {component.options && component.options.length === 1 && component.options[0].type === 'variable' && window.LWWCComponents && window.LWWCComponents.VariableProductSelector && (
-                                    React.createElement(window.LWWCComponents.VariableProductSelector, {
-                                        product: component.options[0],
-                                        onVariationSelect: (variation) => this.handleOptionChange(component.id, variation.id),
-                                        componentId: component.id,
-                                        i18n: window.lwwcI18n
-                                    })
-                                )}
+                                {(() => {
+                                    // Check if the selected option is a variable product
+                                    const selectedProductId = selections[component.id]?.product_id;
+                                    const selectedOption = component.options?.find(opt => opt.id === parseInt(selectedProductId));
+                                    
+                                    // Only show variable product selector if:
+                                    // 1. An option is selected AND it's a variable product, OR
+                                    // 2. There's only one option AND it's a variable product
+                                    const shouldShowVariableSelector = selectedOption?.type === 'variable' || 
+                                        (component.options?.length === 1 && component.options[0].type === 'variable');
+                                    
+                                    if (shouldShowVariableSelector && window.LWWCComponents && window.LWWCComponents.VariableProductSelector) {
+                                        const variableProduct = selectedOption || component.options[0];
+                                        console.log('Composite: Rendering VariableProductSelector for component', component.id, 'product:', variableProduct);
+                                        
+                                        return React.createElement(window.LWWCComponents.VariableProductSelector, {
+                                            product: variableProduct,
+                                            onVariationSelect: (variation) => {
+                                                console.log('Composite: Variation selected', variation.id);
+                                                this.handleOptionChange(component.id, variation.id);
+                                            },
+                                            componentId: component.id,
+                                            i18n: window.lwwcI18n
+                                        });
+                                    }
+                                    return null;
+                                })()}
 
                                 {/* Quantity input */}
                                 <div className="lwwc-composite-config-quantity">
