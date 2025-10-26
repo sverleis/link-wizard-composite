@@ -375,6 +375,10 @@ class LWWC_Composite_URL_Mapper {
 					if ( isset( $component_data['attributes'] ) && ! empty( $component_data['attributes'] ) ) {
 						error_log( 'Link Wizard for Composites: Adding attributes for component ' . $component_id . ': ' . wp_json_encode( $component_data['attributes'] ) );
 						
+						// Set variation ID parameter (wccpv_c1=82)
+						$_GET['wccpv_' . $component_id ] = absint( $component_data['product_id'] );
+						error_log( 'Link Wizard for Composites: Setting $_GET[wccpv_' . $component_id . '] = ' . $component_data['product_id'] );
+						
 						// Set attribute $_GET parameters (wccp_attribute_pa_color_c1=blue, etc.)
 						foreach ( $component_data['attributes'] as $attr_name => $attr_value ) {
 							$_GET[ 'wccp_attribute_' . $attr_name . '_' . $component_id ] = sanitize_text_field( $attr_value );
