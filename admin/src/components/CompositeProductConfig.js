@@ -143,6 +143,7 @@ class CompositeProductConfig extends Component {
 
     /**
      * Strip HTML tags and get clean price text.
+     * Handles sale prices by showing: Original price (strikethrough) → Sale price
      */
     cleanPriceHtml = (priceHtml) => {
         if (!priceHtml) return '';
@@ -151,19 +152,40 @@ class CompositeProductConfig extends Component {
         const div = document.createElement('div');
         div.innerHTML = priceHtml;
         
-        // Get text content (strips all HTML tags)
+        // Check if this is a sale price (has <del> and <ins> tags)
+        const delElement = div.querySelector('del');
+        const insElement = div.querySelector('ins');
+        
+        if (delElement && insElement) {
+            // Sale price: extract both original and sale prices
+            const originalPrice = delElement.textContent.trim();
+            const salePrice = insElement.textContent.trim();
+            
+            // Calculate discount percentage
+            const originalValue = parseFloat(originalPrice.replace(/[^\d.,]/g, '').replace(',', '.'));
+            const saleValue = parseFloat(salePrice.replace(/[^\d.,]/g, '').replace(',', '.'));
+            
+            if (originalValue && saleValue && originalValue > saleValue) {
+                const discount = ((originalValue - saleValue) / originalValue * 100).toFixed(1);
+                // Format: "R16,00 (11.1% off)"
+                return `${salePrice} (${discount}% off)`;
+            }
+            
+            // Fallback: just show sale price if calculation fails
+            return salePrice;
+        }
+        
+        // Not a sale price - just clean up the text
         let text = div.textContent || div.innerText || '';
         
         // Clean up extra whitespace
         text = text.replace(/\s+/g, ' ').trim();
         
-        // Remove "Original price was:" and "Current price is:" screen reader text
-        text = text.replace(/Original price was:\s*/g, '');
-        text = text.replace(/Current price is:\s*/g, '');
+        // Remove screen reader text
+        text = text.replace(/Original price was:\s*/gi, '');
+        text = text.replace(/Current price is:\s*/gi, '');
         
         // Remove duplicate "Price range:" text for variable products
-        // Example: "R15,00 – R20,00Price range: R15,00 through R20,00"
-        // Should become: "R15,00 – R20,00"
         text = text.replace(/Price range:.*$/i, '');
         
         // Clean up any remaining extra whitespace
