@@ -142,6 +142,29 @@ class CompositeProductConfig extends Component {
     };
 
     /**
+     * Strip HTML tags and get clean price text.
+     */
+    cleanPriceHtml = (priceHtml) => {
+        if (!priceHtml) return '';
+        
+        // Create a temporary div to parse HTML
+        const div = document.createElement('div');
+        div.innerHTML = priceHtml;
+        
+        // Get text content (strips all HTML tags)
+        let text = div.textContent || div.innerText || '';
+        
+        // Clean up extra whitespace
+        text = text.replace(/\s+/g, ' ').trim();
+        
+        // Remove "Original price was:" and "Current price is:" screen reader text
+        text = text.replace(/Original price was:\s*/g, '');
+        text = text.replace(/Current price is:\s*/g, '');
+        
+        return text;
+    };
+
+    /**
      * Handle Add/Update Product button click.
      */
     handleUpdate = async () => {
@@ -297,7 +320,7 @@ class CompositeProductConfig extends Component {
                                         {component.options.map(option => (
                                             <option key={option.id} value={option.id}>
                                                 {option.name}
-                                                {option.price && ` - ${option.price}`}
+                                                {option.price && ` - ${this.cleanPriceHtml(option.price)}`}
                                             </option>
                                         ))}
                                     </select>
@@ -314,6 +337,9 @@ class CompositeProductConfig extends Component {
 
                                 {/* Quantity input */}
                                 <div className="lwwc-composite-config-quantity">
+                                    <span className="lwwc-composite-config-quantity-range">
+                                        Min: {component.quantity.min}, Max: {component.quantity.max}
+                                    </span>
                                     <label>Qty:</label>
                                     <input
                                         type="number"
@@ -323,9 +349,6 @@ class CompositeProductConfig extends Component {
                                         onChange={(e) => this.handleQuantityChange(component.id, e.target.value)}
                                         className="lwwc-composite-config-quantity-input"
                                     />
-                                    <span className="lwwc-composite-config-quantity-range">
-                                        (Min: {component.quantity.min}, Max: {component.quantity.max})
-                                    </span>
                                 </div>
                             </div>
                         </div>
