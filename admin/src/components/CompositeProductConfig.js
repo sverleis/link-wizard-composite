@@ -114,13 +114,15 @@ class CompositeProductConfig extends Component {
      * 
      * @param {String} componentId - The component ID
      * @param {Number|Object} productIdOrVariation - Product ID (from dropdown) or variation object (from VariableProductSelector)
+     * @param {Object} selectedAttributes - Selected attribute values (from VariableProductSelector)
      */
-    handleOptionChange = (componentId, productIdOrVariation) => {
+    handleOptionChange = (componentId, productIdOrVariation, selectedAttributes = null) => {
         // Check if we received a variation object (from VariableProductSelector)
         if (typeof productIdOrVariation === 'object' && productIdOrVariation !== null) {
             // This is a variation object from VariableProductSelector
             const variation = productIdOrVariation;
             console.log('Composite: handleOptionChange received variation object:', variation);
+            console.log('Composite: handleOptionChange received attributes:', selectedAttributes);
             
             this.setState(prevState => ({
                 selections: {
@@ -128,7 +130,8 @@ class CompositeProductConfig extends Component {
                     [componentId]: {
                         ...prevState.selections[componentId],
                         product_id: parseInt(variation.id),
-                        name: variation.name || '' // Use variation name
+                        name: variation.name || '', // Use variation name
+                        attributes: selectedAttributes || {} // Store selected attributes for "Any" variations
                     }
                 }
             }));
@@ -427,9 +430,12 @@ class CompositeProductConfig extends Component {
                                     
                                         return React.createElement(window.LWWCComponents.VariableProductSelector, {
                                             product: variableProduct,
-                                            onVariationSelect: (variation) => {
+                                            onVariationSelect: (variation, selectedAttributes) => {
                                                 console.log('Composite: Variation selected', variation);
-                                                this.handleOptionChange(component.id, variation); // Pass full variation object
+                                                console.log('Composite: Selected attributes', selectedAttributes);
+                                                
+                                                // Pass full variation object with selected attributes
+                                                this.handleOptionChange(component.id, variation, selectedAttributes);
                                             },
                                             componentId: component.id,
                                             i18n: window.lwwcI18n,
