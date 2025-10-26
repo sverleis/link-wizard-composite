@@ -383,8 +383,16 @@ class LWWC_Composite_URL_Mapper {
 						// Add variation_id to component data
 						$component_cart_data['variation_id'] = absint( $component_data['product_id'] );
 						
-						// Add attributes array to component data
-						$component_cart_data['attributes'] = $component_data['attributes'];
+						// Format attributes with 'attribute_' prefix (WooCommerce format)
+						$formatted_attributes = array();
+						foreach ( $component_data['attributes'] as $attr_name => $attr_value ) {
+							// Add 'attribute_' prefix if not already present
+							$formatted_key = strpos( $attr_name, 'attribute_' ) === 0 ? $attr_name : 'attribute_' . $attr_name;
+							$formatted_attributes[ $formatted_key ] = sanitize_text_field( $attr_value );
+						}
+						$component_cart_data['attributes'] = $formatted_attributes;
+						
+						error_log( 'Link Wizard for Composites: Formatted attributes: ' . wp_json_encode( $formatted_attributes ) );
 						
 						// Set attribute $_GET parameters (wccp_attribute_pa_color_c1=blue, etc.)
 						foreach ( $component_data['attributes'] as $attr_name => $attr_value ) {
