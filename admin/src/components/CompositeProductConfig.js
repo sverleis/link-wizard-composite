@@ -111,22 +111,46 @@ class CompositeProductConfig extends Component {
 
     /**
      * Handle component option selection change.
+     * 
+     * @param {String} componentId - The component ID
+     * @param {Number|Object} productIdOrVariation - Product ID (from dropdown) or variation object (from VariableProductSelector)
      */
-    handleOptionChange = (componentId, productId) => {
-        // Find the selected option to get its name
-        const component = this.state.components.find(c => c.id === componentId);
-        const selectedOption = component?.options?.find(o => o.id === parseInt(productId));
-        
-        this.setState(prevState => ({
-            selections: {
-                ...prevState.selections,
-                [componentId]: {
-                    ...prevState.selections[componentId],
-                    product_id: parseInt(productId),
-                    name: selectedOption?.name || '' // Store the product name
+    handleOptionChange = (componentId, productIdOrVariation) => {
+        // Check if we received a variation object (from VariableProductSelector)
+        if (typeof productIdOrVariation === 'object' && productIdOrVariation !== null) {
+            // This is a variation object from VariableProductSelector
+            const variation = productIdOrVariation;
+            console.log('Composite: handleOptionChange received variation object:', variation);
+            
+            this.setState(prevState => ({
+                selections: {
+                    ...prevState.selections,
+                    [componentId]: {
+                        ...prevState.selections[componentId],
+                        product_id: parseInt(variation.id),
+                        name: variation.name || '' // Use variation name
+                    }
                 }
-            }
-        }));
+            }));
+        } else {
+            // This is a product ID from the dropdown
+            const productId = productIdOrVariation;
+            
+            // Find the selected option to get its name
+            const component = this.state.components.find(c => c.id === componentId);
+            const selectedOption = component?.options?.find(o => o.id === parseInt(productId));
+            
+            this.setState(prevState => ({
+                selections: {
+                    ...prevState.selections,
+                    [componentId]: {
+                        ...prevState.selections[componentId],
+                        product_id: parseInt(productId),
+                        name: selectedOption?.name || '' // Store the product name
+                    }
+                }
+            }));
+        }
     };
 
     /**
@@ -368,35 +392,6 @@ class CompositeProductConfig extends Component {
                                     </div>
                                 )}
 
-                                {/* Variable Product Selector (using shared component from core plugin) */}
-                                {(() => {
-                                    // Check if the selected option is a variable product
-                                    const selectedProductId = selections[component.id]?.product_id;
-                                    const selectedOption = component.options?.find(opt => opt.id === parseInt(selectedProductId));
-                                    
-                                    // Only show variable product selector if:
-                                    // 1. An option is selected AND it's a variable product, OR
-                                    // 2. There's only one option AND it's a variable product
-                                    const shouldShowVariableSelector = selectedOption?.type === 'variable' || 
-                                        (component.options?.length === 1 && component.options[0].type === 'variable');
-                                    
-                                    if (shouldShowVariableSelector && window.LWWCComponents && window.LWWCComponents.VariableProductSelector) {
-                                        const variableProduct = selectedOption || component.options[0];
-                                        console.log('Composite: Rendering VariableProductSelector for component', component.id, 'product:', variableProduct);
-                                        
-                                        return React.createElement(window.LWWCComponents.VariableProductSelector, {
-                                            product: variableProduct,
-                                            onVariationSelect: (variation) => {
-                                                console.log('Composite: Variation selected', variation.id);
-                                                this.handleOptionChange(component.id, variation.id);
-                                            },
-                                            componentId: component.id,
-                                            i18n: window.lwwcI18n
-                                        });
-                                    }
-                                    return null;
-                                })()}
-
                                 {/* Quantity input */}
                                 <div className="lwwc-composite-config-quantity">
                                     <span className="lwwc-composite-config-quantity-range">
@@ -413,6 +408,35 @@ class CompositeProductConfig extends Component {
                                     />
                                 </div>
                             </div>
+
+                            {/* Variable Product Selector (full width, below dropdown and quantity) */}
+                            {(() => {
+                                // Check if the selected option is a variable product
+                                const selectedProductId = selections[component.id]?.product_id;
+                                const selectedOption = component.options?.find(opt => opt.id === parseInt(selectedProductId));
+                                
+                                // Only show variable product selector if:
+                                // 1. An option is selected AND it's a variable product, OR
+                                // 2. There's only one option AND it's a variable product
+                                const shouldShowVariableSelector = selectedOption?.type === 'variable' || 
+                                    (component.options?.length === 1 && component.options[0].type === 'variable');
+                                
+                                if (shouldShowVariableSelector && window.LWWCComponents && window.LWWCComponents.VariableProductSelector) {
+                                    const variableProduct = selectedOption || component.options[0];
+                                    console.log('Composite: Rendering VariableProductSelector for component', component.id, 'product:', variableProduct);
+                                    
+                                    return React.createElement(window.LWWCComponents.VariableProductSelector, {
+                                        product: variableProduct,
+                                        onVariationSelect: (variation) => {
+                                            console.log('Composite: Variation selected', variation);
+                                            this.handleOptionChange(component.id, variation); // Pass full variation object
+                                        },
+                                        componentId: component.id,
+                                        i18n: window.lwwcI18n
+                                    });
+                                }
+                                return null;
+                            })()}
                         </div>
                     ))}
                 </div>
