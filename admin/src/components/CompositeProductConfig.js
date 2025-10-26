@@ -1,6 +1,9 @@
 import React, { Component } from 'react';
 import apiFetch from '@wordpress/api-fetch';
 
+// Access shared VariableProductSelector from core plugin
+// Available as window.LWWCComponents.VariableProductSelector
+
 /**
  * Composite Product Configuration Component.
  *
@@ -28,11 +31,6 @@ class CompositeProductConfig extends Component {
             isLoading: true,
             calculatedPrice: null,
             isCalculating: false,
-            // Variable product state
-            selectedAttributes: {},
-            filteredVariations: {},
-            isLoadingVariations: {},
-            showingAllVariations: {},
         };
     }
 
@@ -197,160 +195,6 @@ class CompositeProductConfig extends Component {
         text = text.replace(/\s+/g, ' ').trim();
         
         return text;
-    };
-
-    /**
-     * Handle attribute change for variable products.
-     */
-    handleAttributeChange = (componentId, attributeSlug, value) => {
-        const { selectedAttributes } = this.state;
-        
-        // Update selected attributes for this component
-        const newSelectedAttributes = {
-            ...selectedAttributes,
-            [componentId]: {
-                ...selectedAttributes[componentId],
-                [attributeSlug]: value
-            }
-        };
-        
-        this.setState({ selectedAttributes: newSelectedAttributes });
-        
-        // Load filtered variations if we have valid attributes
-        const validAttributes = {};
-        Object.keys(newSelectedAttributes[componentId] || {}).forEach(key => {
-            if (newSelectedAttributes[componentId][key] && newSelectedAttributes[componentId][key].trim() !== '') {
-                validAttributes[key] = newSelectedAttributes[componentId][key];
-            }
-        });
-        
-        if (Object.keys(validAttributes).length > 0) {
-            this.loadFilteredVariations(componentId, validAttributes);
-        } else {
-            // Clear variations if no valid attributes
-            this.setState(prevState => ({
-                filteredVariations: {
-                    ...prevState.filteredVariations,
-                    [componentId]: []
-                }
-            }));
-        }
-    };
-
-    /**
-     * Load filtered variations for a variable product component.
-     */
-    loadFilteredVariations = async (componentId, attributes) => {
-        // Find the component to get the variable product ID
-        const component = this.state.components.find(c => c.id === componentId);
-        if (!component || !component.options) return;
-        
-        // Find the variable product option
-        const variableOption = component.options.find(option => option.type === 'variable');
-        if (!variableOption) return;
-        
-        this.setState(prevState => ({
-            isLoadingVariations: {
-                ...prevState.isLoadingVariations,
-                [componentId]: true
-            }
-        }));
-        
-        try {
-            const attributesJson = JSON.stringify(attributes);
-            const response = await apiFetch({
-                path: `/lwwc-composite/v1/variations/${variableOption.id}?attributes=${encodeURIComponent(attributesJson)}`,
-                method: 'GET'
-            });
-            
-            this.setState(prevState => ({
-                filteredVariations: {
-                    ...prevState.filteredVariations,
-                    [componentId]: response
-                },
-                isLoadingVariations: {
-                    ...prevState.isLoadingVariations,
-                    [componentId]: false
-                }
-            }));
-        } catch (error) {
-            console.error('Error loading filtered variations:', error);
-            this.setState(prevState => ({
-                isLoadingVariations: {
-                    ...prevState.isLoadingVariations,
-                    [componentId]: false
-                }
-            }));
-        }
-    };
-
-    /**
-     * Toggle showing all variations for a component.
-     */
-    toggleAllVariations = (componentId) => {
-        const { showingAllVariations } = this.state;
-        const isShowing = showingAllVariations[componentId];
-        
-        if (isShowing) {
-            // Hide variations
-            this.setState(prevState => ({
-                showingAllVariations: {
-                    ...prevState.showingAllVariations,
-                    [componentId]: false
-                }
-            }));
-        } else {
-            // Show all variations
-            this.loadAllVariations(componentId);
-        }
-    };
-
-    /**
-     * Load all variations for a variable product component.
-     */
-    loadAllVariations = async (componentId) => {
-        const component = this.state.components.find(c => c.id === componentId);
-        if (!component || !component.options) return;
-        
-        const variableOption = component.options.find(option => option.type === 'variable');
-        if (!variableOption) return;
-        
-        this.setState(prevState => ({
-            isLoadingVariations: {
-                ...prevState.isLoadingVariations,
-                [componentId]: true
-            }
-        }));
-        
-        try {
-            const response = await apiFetch({
-                path: `/lwwc-composite/v1/variations/${variableOption.id}`,
-                method: 'GET'
-            });
-            
-            this.setState(prevState => ({
-                filteredVariations: {
-                    ...prevState.filteredVariations,
-                    [componentId]: response
-                },
-                isLoadingVariations: {
-                    ...prevState.isLoadingVariations,
-                    [componentId]: false
-                },
-                showingAllVariations: {
-                    ...prevState.showingAllVariations,
-                    [componentId]: true
-                }
-            }));
-        } catch (error) {
-            console.error('Error loading all variations:', error);
-            this.setState(prevState => ({
-                isLoadingVariations: {
-                    ...prevState.isLoadingVariations,
-                    [componentId]: false
-                }
-            }));
-        }
     };
 
     /**
@@ -524,99 +368,14 @@ class CompositeProductConfig extends Component {
                                     </div>
                                 )}
 
-                                {/* Variable Product Attribute Filters */}
-                                {component.options && component.options.length === 1 && component.options[0].type === 'variable' && component.options[0].attributes && (
-                                    <div className="attribute-filter-container">
-                                        <div className="attribute-filter-header">
-                                            Filter by Attributes:
-                                        </div>
-                                        <div className="attribute-filter-options">
-                                            {component.options[0].attributes.map((attribute) => (
-                                                <div key={attribute.slug} className="attribute-filter-option">
-                                                    <label className="attribute-filter-label">
-                                                        {attribute.name}:
-                                                    </label>
-                                                    <select
-                                                        value={this.state.selectedAttributes[component.id]?.[attribute.slug] || ''}
-                                                        onChange={(e) => this.handleAttributeChange(component.id, attribute.slug, e.target.value)}
-                                                        className="attribute-filter-select"
-                                                    >
-                                                        <option value="">Any {attribute.name}</option>
-                                                        {attribute.values.map((value) => (
-                                                            <option key={value.slug} value={value.slug}>
-                                                                {value.name}
-                                                            </option>
-                                                        ))}
-                                                    </select>
-                                                </div>
-                                            ))}
-                                            <button 
-                                                className="attribute-filter-reset"
-                                                onClick={() => {
-                                                    const newSelectedAttributes = { ...this.state.selectedAttributes };
-                                                    delete newSelectedAttributes[component.id];
-                                                    this.setState({ selectedAttributes: newSelectedAttributes });
-                                                }}
-                                            >
-                                                Reset Filters
-                                            </button>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* Variable Product Variations */}
-                                {component.options && component.options.length === 1 && component.options[0].type === 'variable' && (
-                                    <div className="lwwc-variations-section">
-                                        <div className="lwwc-show-all-variations-button">
-                                            <button 
-                                                onClick={() => this.toggleAllVariations(component.id)}
-                                                disabled={this.state.isLoadingVariations[component.id]}
-                                            >
-                                                {this.state.showingAllVariations[component.id] ? 'Hide Variations' : 'Show All Variations'}
-                                            </button>
-                                        </div>
-                                        
-                                        {this.state.showingAllVariations[component.id] && (
-                                            <>
-                                                <div className="lwwc-variations-section-title">
-                                                    Available Variations:
-                                                </div>
-                                                <div className="lwwc-variations-list">
-                                                    {this.state.isLoadingVariations[component.id] ? (
-                                                        <div className="lwwc-variations-loading">
-                                                            <span className="spinner is-active"></span>
-                                                            Loading variations...
-                                                        </div>
-                                                    ) : (
-                                                        (this.state.filteredVariations[component.id] || []).map((variation) => (
-                                                            <div 
-                                                                key={variation.id} 
-                                                                className="lwwc-variation-item"
-                                                                onClick={() => this.handleOptionChange(component.id, variation.id)}
-                                                            >
-                                                                <div className="lwwc-variation-item-icon">
-                                                                    <span className="dashicons dashicons-products"></span>
-                                                                </div>
-                                                                <div className="lwwc-variation-item-details">
-                                                                    <div className="lwwc-variation-item-name">
-                                                                        {variation.name}
-                                                                    </div>
-                                                                    {variation.sku && (
-                                                                        <div className="lwwc-variation-item-sku">
-                                                                            SKU: {variation.sku}
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                                <div className="lwwc-variation-item-price">
-                                                                    <span dangerouslySetInnerHTML={{ __html: variation.price }} />
-                                                                </div>
-                                                            </div>
-                                                        ))
-                                                    )}
-                                                </div>
-                                            </>
-                                        )}
-                                    </div>
+                                {/* Variable Product Selector (using shared component from core plugin) */}
+                                {component.options && component.options.length === 1 && component.options[0].type === 'variable' && window.LWWCComponents && window.LWWCComponents.VariableProductSelector && (
+                                    React.createElement(window.LWWCComponents.VariableProductSelector, {
+                                        product: component.options[0],
+                                        onVariationSelect: (variation) => this.handleOptionChange(component.id, variation.id),
+                                        componentId: component.id,
+                                        i18n: window.lwwcI18n
+                                    })
                                 )}
 
                                 {/* Quantity input */}
