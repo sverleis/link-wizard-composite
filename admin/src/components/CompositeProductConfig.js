@@ -433,7 +433,8 @@ class CompositeProductConfig extends Component {
                                             },
                                             componentId: component.id,
                                             i18n: window.lwwcI18n,
-                                            allowAnyAttributes: true // Composite products can handle "Any" attributes
+                                            allowAnyAttributes: true, // Composite products can handle "Any" attributes
+                                            apiBasePath: 'lwwc-composite/v1' // Use composite plugin's API endpoint
                                         });
                                 }
                                 return null;
