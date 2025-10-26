@@ -459,22 +459,28 @@ class LWWC_Composite_Product_Handler implements LWWC_Product_Handler_Interface {
 		// Generate default URL using the new generate_url method.
 		$default_url = $this->generate_url( $product, 'addToCart', array( 'redirect_path' => '/' ) );
 
+		// Get components and default selections for display.
+		$components = $this->get_components( $product );
+		$default_selections = $this->get_default_component_selections( $product );
+
 		// Return basic product data for search results.
 		return array(
 			array(
-				'id'           => $product->get_id(),
-				'name'         => $product->get_name(),
-				'sku'          => $product->get_sku(),
-				'price'        => $product->get_price_html(),
-				'image'        => wp_get_attachment_image_url( $product->get_image_id(), 'thumbnail' ),
-				'parent_id'    => '',
-				'parent_name'  => '',
-				'attributes'   => array(),
-				'type'         => 'composite',
-				'slug'         => $product->get_slug(),
-				'status'       => $product->get_status(),
-				'checkout_url' => $default_url,  // Default configuration URL.
-				'url'          => $default_url,  // Alias for compatibility.
+				'id'                   => $product->get_id(),
+				'name'                 => $product->get_name(),
+				'sku'                  => $product->get_sku(),
+				'price'                => $product->get_price_html(),
+				'image'                => wp_get_attachment_image_url( $product->get_image_id(), 'thumbnail' ),
+				'parent_id'            => '',
+				'parent_name'          => '',
+				'attributes'           => array(),
+				'type'                 => 'composite',
+				'slug'                 => $product->get_slug(),
+				'status'               => $product->get_status(),
+				'checkout_url'         => $default_url,  // Default configuration URL.
+				'url'                  => $default_url,  // Alias for compatibility.
+				'components'           => $components,   // Component definitions for configuration UI.
+				'component_selections' => $default_selections, // Default selections for pills display.
 			),
 		);
 	}

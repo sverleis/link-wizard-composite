@@ -161,6 +161,14 @@ class CompositeProductConfig extends Component {
         text = text.replace(/Original price was:\s*/g, '');
         text = text.replace(/Current price is:\s*/g, '');
         
+        // Remove duplicate "Price range:" text for variable products
+        // Example: "R15,00 – R20,00Price range: R15,00 through R20,00"
+        // Should become: "R15,00 – R20,00"
+        text = text.replace(/Price range:.*$/i, '');
+        
+        // Clean up any remaining extra whitespace
+        text = text.replace(/\s+/g, ' ').trim();
+        
         return text;
     };
 
