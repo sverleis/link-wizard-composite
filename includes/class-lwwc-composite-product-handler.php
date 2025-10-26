@@ -160,12 +160,37 @@ class LWWC_Composite_Product_Handler implements LWWC_Product_Handler_Interface {
 				continue;
 			}
 
-			$options[] = array(
-				'id'    => $option_product->get_id(),
-				'name'  => $option_product->get_name(),
-				'price' => $option_product->get_price_html(),
-				'type'  => $option_product->get_type(),
-			);
+			// Check if this is a variable product.
+			if ( $option_product->is_type( 'variable' ) ) {
+				// For variable products, get all variations.
+				$variations = $option_product->get_available_variations();
+				
+				foreach ( $variations as $variation_data ) {
+					$variation = wc_get_product( $variation_data['variation_id'] );
+					
+					if ( ! $variation ) {
+						continue;
+					}
+					
+					// Format variation name with attributes.
+					$variation_name = $option_product->get_name() . ' - ' . wc_get_formatted_variation( $variation, true );
+					
+					$options[] = array(
+						'id'    => $variation->get_id(),
+						'name'  => $variation_name,
+						'price' => $variation->get_price_html(),
+						'type'  => 'variation',
+					);
+				}
+			} else {
+				// For simple and other product types, add as is.
+				$options[] = array(
+					'id'    => $option_product->get_id(),
+					'name'  => $option_product->get_name(),
+					'price' => $option_product->get_price_html(),
+					'type'  => $option_product->get_type(),
+				);
+			}
 		}
 
 		return $options;

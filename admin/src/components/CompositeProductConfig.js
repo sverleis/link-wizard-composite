@@ -335,7 +335,7 @@ class CompositeProductConfig extends Component {
                                 ) : component.options && component.options.length === 1 ? (
                                     <div className="lwwc-composite-config-single-option">
                                         {component.options[0].name}
-                                        {component.options[0].price && ` - ${component.options[0].price}`}
+                                        {component.options[0].price && ` - ${this.cleanPriceHtml(component.options[0].price)}`}
                                     </div>
                                 ) : (
                                     <div className="lwwc-composite-config-no-options">
