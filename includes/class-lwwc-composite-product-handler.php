@@ -274,19 +274,25 @@ class LWWC_Composite_Product_Handler implements LWWC_Product_Handler_Interface {
 					$attribute_key_original  = 'attribute_' . $original_attribute_name;
 
 					if ( isset( $variation['attributes'][ $attribute_key_with_prefix ] ) ) {
-						if ( strtolower( $variation['attributes'][ $attribute_key_with_prefix ] ) !== strtolower( $attribute_value ) ) {
+						$variation_attr_value = $variation['attributes'][ $attribute_key_with_prefix ];
+						
+						// IMPORTANT: If variation has "Any" (empty value), it matches ANY selected attribute!
+						// This is how composite products work - "Any" means it can be whatever the user chooses.
+						if ( $variation_attr_value !== '' && strtolower( $variation_attr_value ) !== strtolower( $attribute_value ) ) {
 							$matches_attributes = false;
 							break;
 						}
 					} elseif ( isset( $variation['attributes'][ $attribute_key_original ] ) ) {
-						if ( strtolower( $variation['attributes'][ $attribute_key_original ] ) !== strtolower( $attribute_value ) ) {
+						$variation_attr_value = $variation['attributes'][ $attribute_key_original ];
+						
+						// Same logic: empty value means "Any" - matches anything.
+						if ( $variation_attr_value !== '' && strtolower( $variation_attr_value ) !== strtolower( $attribute_value ) ) {
 							$matches_attributes = false;
 							break;
 						}
-					} else {
-						$matches_attributes = false;
-						break;
 					}
+					// Note: If attribute not found in variation, we don't filter it out for composite products.
+					// This allows "Any" attribute variations to match all filters.
 				}
 
 				// Skip this variation if it doesn't match the selected attributes.
