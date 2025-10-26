@@ -293,13 +293,27 @@ class LWWC_Composite_Product_Handler implements LWWC_Product_Handler_Interface {
 			}
 
 			$variation_product = wc_get_product( $variation['variation_id'] );
-			if ( $variation_product && $variation_product->is_purchasable() && $variation_product->is_in_stock() ) {
+			
+			// For composite products, we need to include ALL variations,
+			// even those with "Any" attributes, because composite products
+			// can handle attribute selection via URL parameters.
+			if ( $variation_product ) {
+				// Check if this variation has "Any" attributes
+				$has_any_attributes = false;
+				foreach ( $variation['attributes'] as $attr_key => $attr_value ) {
+					if ( empty( $attr_value ) || $attr_value === '' ) {
+						$has_any_attributes = true;
+						break;
+					}
+				}
+				
 				$results[] = array(
 					'id'         => $variation_product->get_id(),
 					'name'       => $variation_product->get_name(),
 					'sku'        => $variation_product->get_sku(),
 					'price'      => $variation_product->get_price_html(),
 					'attributes' => $variation['attributes'],
+					'disabled'   => $has_any_attributes, // Mark as disabled but still include it
 				);
 			}
 		}

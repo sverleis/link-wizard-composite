@@ -425,15 +425,16 @@ class CompositeProductConfig extends Component {
                                     const variableProduct = selectedOption || component.options[0];
                                     console.log('Composite: Rendering VariableProductSelector for component', component.id, 'product:', variableProduct);
                                     
-                                    return React.createElement(window.LWWCComponents.VariableProductSelector, {
-                                        product: variableProduct,
-                                        onVariationSelect: (variation) => {
-                                            console.log('Composite: Variation selected', variation);
-                                            this.handleOptionChange(component.id, variation); // Pass full variation object
-                                        },
-                                        componentId: component.id,
-                                        i18n: window.lwwcI18n
-                                    });
+                                        return React.createElement(window.LWWCComponents.VariableProductSelector, {
+                                            product: variableProduct,
+                                            onVariationSelect: (variation) => {
+                                                console.log('Composite: Variation selected', variation);
+                                                this.handleOptionChange(component.id, variation); // Pass full variation object
+                                            },
+                                            componentId: component.id,
+                                            i18n: window.lwwcI18n,
+                                            allowAnyAttributes: true // Composite products can handle "Any" attributes
+                                        });
                                 }
                                 return null;
                             })()}
