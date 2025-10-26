@@ -65,6 +65,7 @@ class CompositeProductConfig extends Component {
                         const defaultOption = component.options[0];
                         initialSelections[component.id] = {
                             product_id: defaultOption.id,
+                            name: defaultOption.name, // Store the product name
                             quantity: component.quantity.min || 1
                         };
                     }
@@ -109,12 +110,17 @@ class CompositeProductConfig extends Component {
      * Handle component option selection change.
      */
     handleOptionChange = (componentId, productId) => {
+        // Find the selected option to get its name
+        const component = this.state.components.find(c => c.id === componentId);
+        const selectedOption = component?.options?.find(o => o.id === parseInt(productId));
+        
         this.setState(prevState => ({
             selections: {
                 ...prevState.selections,
                 [componentId]: {
                     ...prevState.selections[componentId],
-                    product_id: parseInt(productId)
+                    product_id: parseInt(productId),
+                    name: selectedOption?.name || '' // Store the product name
                 }
             }
         }));
