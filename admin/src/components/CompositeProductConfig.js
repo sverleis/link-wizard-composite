@@ -9,11 +9,15 @@ import apiFetch from '@wordpress/api-fetch';
  * - Dropdowns for each component (showing available products)
  * - Quantity selectors (with min/max validation)
  * - Real-time price calculation
- * - "Update Product" button to apply configuration
+ * - "Add to Cart" or "Add Product" button to apply configuration
  *
+ * Props from Link Wizard:
  * @param {Object} product - The composite product
- * @param {Function} onUpdate - Callback when user updates configuration
- * @param {Function} onCancel - Callback when user cancels
+ * @param {string} linkType - 'addToCart' or 'checkoutLink'
+ * @param {Function} handleAddCompositeProduct - Callback to add composite with selections
+ * @param {Function} toggleProductExpansion - Callback to close configuration panel
+ * @param {Function} isProductExpanded - Check if product is expanded
+ * @param {Function} setSelectedProducts - Update selected products (for replacement in add-to-cart)
  */
 class CompositeProductConfig extends Component {
     constructor(props) {
@@ -132,29 +136,62 @@ class CompositeProductConfig extends Component {
     };
 
     /**
-     * Handle Update Product button click.
+     * Handle Add/Update Product button click.
      */
     handleUpdate = async () => {
+        const { product, linkType, handleAddCompositeProduct, toggleProductExpansion, setSelectedProducts } = this.props;
+
         try {
             const response = await apiFetch({
                 path: '/lwwc-composite/v1/generate-url',
                 method: 'POST',
                 data: {
-                    product_id: this.props.product.id,
+                    product_id: product.id,
                     component_selections: this.state.selections,
                     quantity: 1
                 }
             });
 
             if (response.checkout_url) {
-                // Call the onUpdate callback with the updated product data.
-                this.props.onUpdate({
-                    ...this.props.product,
+                const updatedProduct = {
+                    ...product,
                     checkout_url: response.checkout_url,
                     url: response.checkout_url,
                     component_selections: this.state.selections,
-                    calculated_price: this.state.calculatedPrice
-                });
+                    calculated_price: this.state.calculatedPrice,
+                    quantity: 1
+                };
+
+                if (linkType === 'addToCart') {
+                    // In add-to-cart mode: Replace existing composite product
+                    console.log('Composite: Replacing product in add-to-cart mode');
+                    setSelectedProducts(prev => {
+                        // Remove any existing composite products
+                        const filtered = prev.filter(p => p.type !== 'composite');
+                        // Add the new configured composite
+                        return [...filtered, updatedProduct];
+                    });
+                } else {
+                    // In checkout-link mode: Add as new product (allow multiple composites)
+                    console.log('Composite: Adding new product in checkout-link mode');
+                    // Convert selections to component selections format for handleAddCompositeProduct
+                    const componentSelections = Object.keys(this.state.selections).map(componentId => {
+                        const selection = this.state.selections[componentId];
+                        const component = this.state.components.find(c => c.id === componentId);
+                        const option = component?.options?.find(o => o.id === selection.product_id);
+                        
+                        return {
+                            id: componentId,
+                            selected_option: option || { id: selection.product_id },
+                            quantity: selection.quantity
+                        };
+                    });
+
+                    handleAddCompositeProduct(product, componentSelections);
+                }
+
+                // Close the configuration panel
+                toggleProductExpansion(product.id);
             }
         } catch (error) {
             console.error('Error generating URL:', error);
@@ -162,8 +199,13 @@ class CompositeProductConfig extends Component {
     };
 
     render() {
-        const { product, onCancel } = this.props;
+        const { product, linkType, toggleProductExpansion, isProductExpanded } = this.props;
         const { components, selections, isLoading, calculatedPrice, isCalculating } = this.state;
+
+        // Only render if product is expanded
+        if (!isProductExpanded || !isProductExpanded(product.id)) {
+            return null;
+        }
 
         if (isLoading) {
             return (
@@ -173,6 +215,9 @@ class CompositeProductConfig extends Component {
                 </div>
             );
         }
+
+        // Determine button text based on link type
+        const buttonText = linkType === 'addToCart' ? 'Add to Cart' : 'Add Product';
 
         return (
             <div className="lwwc-composite-config">
@@ -254,12 +299,12 @@ class CompositeProductConfig extends Component {
                         onClick={this.handleUpdate}
                     >
                         <span className="dashicons dashicons-yes"></span>
-                        Update Product
+                        {buttonText}
                     </button>
                     <button
                         type="button"
                         className="button button-secondary lwwc-composite-config-cancel"
-                        onClick={onCancel}
+                        onClick={() => toggleProductExpansion(product.id)}
                     >
                         <span className="dashicons dashicons-no"></span>
                         Cancel
