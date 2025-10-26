@@ -369,8 +369,12 @@ class LWWC_Composite_URL_Mapper {
 					);
 					
 					// Set $_GET parameters for WooCommerce Composite Products to read.
-					$_GET['wccp_component_selection'][ $component_id ] = absint( $component_data['product_id'] );
-					$_GET['wccp_component_quantity'][ $component_id ] = isset( $component_data['quantity'] ) ? absint( $component_data['quantity'] ) : 1;
+					// Note: wccps_* are used for component product selection, not wccp_component_selection
+					$_GET['wccps_' . $component_id ] = absint( $component_data['product_id'] );
+					$_GET['wccpq_' . $component_id ] = isset( $component_data['quantity'] ) ? absint( $component_data['quantity'] ) : 1;
+					
+					error_log( 'Link Wizard for Composites: Setting $_GET[wccps_' . $component_id . '] = ' . $component_data['product_id'] );
+					error_log( 'Link Wizard for Composites: Setting $_GET[wccpq_' . $component_id . '] = ' . ( isset( $component_data['quantity'] ) ? $component_data['quantity'] : 1 ) );
 					
 					// Add variation attributes if present (for variable products with "Any" attributes).
 					if ( isset( $component_data['attributes'] ) && ! empty( $component_data['attributes'] ) ) {
