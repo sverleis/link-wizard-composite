@@ -326,6 +326,7 @@ class LWWC_Composite_Product_Handler implements LWWC_Product_Handler_Interface {
 				);
 				
 				error_log( 'Composite: Added variation ' . $variation_product->get_id() . ' - ' . $variation_product->get_name() . ' (disabled: ' . ( $has_any_attributes ? 'yes' : 'no' ) . ')' );
+				error_log( 'Composite: Variation attributes: ' . wp_json_encode( $variation['attributes'] ) );
 			} else {
 				error_log( 'Composite: Could not load variation product ' . $variation['variation_id'] );
 			}

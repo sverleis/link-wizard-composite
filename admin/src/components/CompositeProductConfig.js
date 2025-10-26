@@ -251,10 +251,20 @@ class CompositeProductConfig extends Component {
 
             if (response.checkout_url) {
                 // Create a unique ID for this specific configuration
-                // Use the checkout_url's hash to ensure each configuration is unique
-                const urlMatch = response.checkout_url.match(/cp\d+_([a-f0-9]+)/);
-                const configHash = urlMatch ? urlMatch[1] : Date.now();
-                const uniqueId = `${product.id}_${configHash}`;
+                // If editing an existing product, preserve its unique_id
+                // Otherwise, use the checkout_url's hash to ensure each configuration is unique
+                let uniqueId;
+                if (isProductSelected && product.unique_id) {
+                    // Editing: Keep the same unique_id
+                    uniqueId = product.unique_id;
+                    console.log('Composite: Editing - preserving unique_id:', uniqueId);
+                } else {
+                    // Adding new: Generate new unique_id from hash
+                    const urlMatch = response.checkout_url.match(/cp\d+_([a-f0-9]+)/);
+                    const configHash = urlMatch ? urlMatch[1] : Date.now();
+                    uniqueId = `${product.id}_${configHash}`;
+                    console.log('Composite: Adding new - generated unique_id:', uniqueId);
+                }
                 
                 const updatedProduct = {
                     ...product,
