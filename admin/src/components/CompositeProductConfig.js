@@ -174,6 +174,8 @@ class CompositeProductConfig extends Component {
                 } else {
                     // In checkout-link mode: Add as new product (allow multiple composites)
                     console.log('Composite: Adding new product in checkout-link mode');
+                    console.log('Composite: Updated product with URL:', updatedProduct.checkout_url);
+                    
                     // Convert selections to component selections format for handleAddCompositeProduct
                     const componentSelections = Object.keys(this.state.selections).map(componentId => {
                         const selection = this.state.selections[componentId];
@@ -187,7 +189,8 @@ class CompositeProductConfig extends Component {
                         };
                     });
 
-                    handleAddCompositeProduct(product, componentSelections);
+                    // Pass the updatedProduct with the new checkout_url, not the original product
+                    handleAddCompositeProduct(updatedProduct, componentSelections);
                 }
 
                 // Close the configuration panel
