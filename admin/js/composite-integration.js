@@ -59,8 +59,36 @@
             return window.lwwcCompositeExpandedProducts.has(productId);
         };
 
+        window.LWWCAddons.complexProducts.addCompositeProduct = function(product, componentSelections, setSelectedProducts) {
+            console.log('Link Wizard Composite: addCompositeProduct called with product:', product.id);
+            console.log('Link Wizard Composite: componentSelections:', componentSelections);
+
+            if (!setSelectedProducts || typeof setSelectedProducts !== 'function') {
+                console.error('Link Wizard Composite: setSelectedProducts is not a function');
+                return;
+            }
+
+            // The product should already have the checkout_url and url from the React component
+            const compositeProduct = {
+                ...product,
+                quantity: 1
+            };
+
+            // Get current selected products
+            const currentProducts = window.lwwcSelectedProducts || [];
+            console.log('Link Wizard Composite: Current products:', currentProducts);
+
+            // In checkout-link mode, add as new product (allow multiple composites)
+            // In add-to-cart mode, replace existing composite
+            const updatedProducts = [...currentProducts, compositeProduct];
+            
+            console.log('Link Wizard Composite: Updated products:', updatedProducts);
+            setSelectedProducts(updatedProducts);
+        };
+
         console.log('Link Wizard Composite: Complex products integration initialized');
         console.log('Link Wizard Composite: toggleProductExpansion available:', typeof window.LWWCAddons.complexProducts.toggleProductExpansion);
+        console.log('Link Wizard Composite: addCompositeProduct available:', typeof window.LWWCAddons.complexProducts.addCompositeProduct);
     }
 
     // Initialize when DOM is ready.
