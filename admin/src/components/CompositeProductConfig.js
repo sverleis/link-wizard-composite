@@ -139,7 +139,7 @@ class CompositeProductConfig extends Component {
      * Handle Add/Update Product button click.
      */
     handleUpdate = async () => {
-        const { product, linkType, handleAddCompositeProduct, toggleProductExpansion, setSelectedProducts } = this.props;
+        const { product, linkType, handleAddCompositeProduct, toggleProductExpansion, setSelectedProducts, isProductSelected } = this.props;
 
         try {
             const response = await apiFetch({
@@ -153,8 +153,15 @@ class CompositeProductConfig extends Component {
             });
 
             if (response.checkout_url) {
+                // Create a unique ID for this specific configuration
+                // Use the checkout_url's hash to ensure each configuration is unique
+                const urlMatch = response.checkout_url.match(/cp\d+_([a-f0-9]+)/);
+                const configHash = urlMatch ? urlMatch[1] : Date.now();
+                const uniqueId = `${product.id}_${configHash}`;
+                
                 const updatedProduct = {
                     ...product,
+                    unique_id: uniqueId, // Unique identifier for this configuration
                     checkout_url: response.checkout_url,
                     url: response.checkout_url,
                     component_selections: this.state.selections,
@@ -163,7 +170,7 @@ class CompositeProductConfig extends Component {
                 };
 
                 if (linkType === 'addToCart') {
-                    // In add-to-cart mode: Replace existing composite product
+                    // In add-to-cart mode: Always replace existing composite product
                     console.log('Composite: Replacing product in add-to-cart mode');
                     setSelectedProducts(prev => {
                         // Remove any existing composite products
@@ -172,25 +179,43 @@ class CompositeProductConfig extends Component {
                         return [...filtered, updatedProduct];
                     });
                 } else {
-                    // In checkout-link mode: Add as new product (allow multiple composites)
-                    console.log('Composite: Adding new product in checkout-link mode');
-                    console.log('Composite: Updated product with URL:', updatedProduct.checkout_url);
-                    
-                    // Convert selections to component selections format for handleAddCompositeProduct
-                    const componentSelections = Object.keys(this.state.selections).map(componentId => {
-                        const selection = this.state.selections[componentId];
-                        const component = this.state.components.find(c => c.id === componentId);
-                        const option = component?.options?.find(o => o.id === selection.product_id);
+                    // In checkout-link mode: Check if we're editing or adding new
+                    if (isProductSelected) {
+                        // Editing existing composite: Replace it
+                        console.log('Composite: Updating existing product in checkout-link mode');
+                        setSelectedProducts(prev => {
+                            return prev.map(p => {
+                                // Replace the composite product with the same unique_id
+                                // (or same id if no unique_id exists for backwards compatibility)
+                                if (p.type === 'composite' && 
+                                    ((p.unique_id && p.unique_id === product.unique_id) || 
+                                     (!p.unique_id && p.id === product.id))) {
+                                    return updatedProduct;
+                                }
+                                return p;
+                            });
+                        });
+                    } else {
+                        // Adding new composite: Add it to the list
+                        console.log('Composite: Adding new product in checkout-link mode');
+                        console.log('Composite: Updated product with URL:', updatedProduct.checkout_url);
                         
-                        return {
-                            id: componentId,
-                            selected_option: option || { id: selection.product_id },
-                            quantity: selection.quantity
-                        };
-                    });
+                        // Convert selections to component selections format for handleAddCompositeProduct
+                        const componentSelections = Object.keys(this.state.selections).map(componentId => {
+                            const selection = this.state.selections[componentId];
+                            const component = this.state.components.find(c => c.id === componentId);
+                            const option = component?.options?.find(o => o.id === selection.product_id);
+                            
+                            return {
+                                id: componentId,
+                                selected_option: option || { id: selection.product_id },
+                                quantity: selection.quantity
+                            };
+                        });
 
-                    // Pass the updatedProduct with the new checkout_url, not the original product
-                    handleAddCompositeProduct(updatedProduct, componentSelections);
+                        // Pass the updatedProduct with the new checkout_url, not the original product
+                        handleAddCompositeProduct(updatedProduct, componentSelections);
+                    }
                 }
 
                 // Close the configuration panel
