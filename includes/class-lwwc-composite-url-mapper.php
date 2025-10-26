@@ -362,7 +362,8 @@ class LWWC_Composite_URL_Mapper {
 			
 			foreach ( $configuration['components'] as $component_id => $component_data ) {
 				if ( isset( $component_data['product_id'] ) ) {
-					$cart_item_data['composite_data'][ $component_id ] = array(
+					// Build component data for cart
+					$component_cart_data = array(
 						'product_id' => absint( $component_data['product_id'] ),
 						'quantity'   => isset( $component_data['quantity'] ) ? absint( $component_data['quantity'] ) : 1,
 					);
@@ -379,12 +380,20 @@ class LWWC_Composite_URL_Mapper {
 						$_GET['wccpv_' . $component_id ] = absint( $component_data['product_id'] );
 						error_log( 'Link Wizard for Composites: Setting $_GET[wccpv_' . $component_id . '] = ' . $component_data['product_id'] );
 						
+						// Add variation_id to component data
+						$component_cart_data['variation_id'] = absint( $component_data['product_id'] );
+						
+						// Add attributes array to component data
+						$component_cart_data['attributes'] = $component_data['attributes'];
+						
 						// Set attribute $_GET parameters (wccp_attribute_pa_color_c1=blue, etc.)
 						foreach ( $component_data['attributes'] as $attr_name => $attr_value ) {
 							$_GET[ 'wccp_attribute_' . $attr_name . '_' . $component_id ] = sanitize_text_field( $attr_value );
 							error_log( 'Link Wizard for Composites: Setting $_GET[wccp_attribute_' . $attr_name . '_' . $component_id . '] = ' . $attr_value );
 						}
 					}
+					
+					$cart_item_data['composite_data'][ $component_id ] = $component_cart_data;
 				}
 			}
 		}
