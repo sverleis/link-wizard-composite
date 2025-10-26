@@ -52,6 +52,14 @@ class LWWC_Composite_Admin {
 			false // Load in head so it's available early.
 		);
 
+		// Enqueue CSS for composite configuration UI.
+		wp_enqueue_style(
+			'lwwc-composite-config',
+			LWWC_COMPOSITE_URL . 'admin/css/composite-config.css',
+			array(), // No dependencies.
+			LWWC_COMPOSITE_VERSION
+		);
+
 		// Enqueue our React component.
 		$asset_file = LWWC_COMPOSITE_PATH . 'admin/build/composite-admin.asset.php';
 		

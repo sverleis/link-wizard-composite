@@ -202,7 +202,7 @@ class CompositeProductConfig extends Component {
     };
 
     render() {
-        const { product, linkType, toggleProductExpansion, isProductExpanded } = this.props;
+        const { product, linkType, toggleProductExpansion, isProductExpanded, isProductSelected } = this.props;
         const { components, selections, isLoading, calculatedPrice, isCalculating } = this.state;
 
         // Only render if product is expanded
@@ -219,8 +219,14 @@ class CompositeProductConfig extends Component {
             );
         }
 
-        // Determine button text based on link type
-        const buttonText = linkType === 'addToCart' ? 'Add to Cart' : 'Add Product';
+        // Determine button text based on link type and whether product is already selected
+        const isEditing = isProductSelected;
+        let buttonText;
+        if (linkType === 'addToCart') {
+            buttonText = isEditing ? 'Update Product' : 'Add to Cart';
+        } else {
+            buttonText = isEditing ? 'Update Product' : 'Add Product';
+        }
 
         return (
             <div className="lwwc-composite-config">
