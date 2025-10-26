@@ -369,7 +369,7 @@ class LWWC_Composite_URL_Mapper {
 					);
 					
 					// Set $_GET parameters for WooCommerce Composite Products to read.
-					// Note: wccps_* are used for component product selection, not wccp_component_selection
+					// Note: wccps_* are used for component product selection (parent product for variables)
 					$_GET['wccps_' . $component_id ] = absint( $component_data['product_id'] );
 					$_GET['wccpq_' . $component_id ] = isset( $component_data['quantity'] ) ? absint( $component_data['quantity'] ) : 1;
 					
@@ -381,11 +381,13 @@ class LWWC_Composite_URL_Mapper {
 						error_log( 'Link Wizard for Composites: Adding attributes for component ' . $component_id . ': ' . wp_json_encode( $component_data['attributes'] ) );
 						
 						// Set variation ID parameter (wccpv_c1=82)
-						$_GET['wccpv_' . $component_id ] = absint( $component_data['product_id'] );
-						error_log( 'Link Wizard for Composites: Setting $_GET[wccpv_' . $component_id . '] = ' . $component_data['product_id'] );
+						// Use variation_id if available, otherwise use product_id
+						$variation_id = isset( $component_data['variation_id'] ) ? absint( $component_data['variation_id'] ) : absint( $component_data['product_id'] );
+						$_GET['wccpv_' . $component_id ] = $variation_id;
+						error_log( 'Link Wizard for Composites: Setting $_GET[wccpv_' . $component_id . '] = ' . $variation_id );
 						
-						// Add variation_id to component data
-						$component_cart_data['variation_id'] = absint( $component_data['product_id'] );
+						// Add variation_id to component data (use variation_id if available)
+						$component_cart_data['variation_id'] = $variation_id;
 						
 						// Format attributes with 'attribute_' prefix (WooCommerce format)
 						$formatted_attributes = array();

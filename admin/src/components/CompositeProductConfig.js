@@ -124,12 +124,20 @@ class CompositeProductConfig extends Component {
             console.log('Composite: handleOptionChange received variation object:', variation);
             console.log('Composite: handleOptionChange received attributes:', selectedAttributes);
             
+            // Find the parent variable product ID
+            const component = this.state.components.find(c => c.id === componentId);
+            const variableProduct = component?.options?.find(opt => opt.type === 'variable');
+            const parentProductId = variableProduct?.id;
+            
+            console.log('Composite: Parent product ID:', parentProductId, 'Variation ID:', variation.id);
+            
             this.setState(prevState => ({
                 selections: {
                     ...prevState.selections,
                     [componentId]: {
                         ...prevState.selections[componentId],
-                        product_id: parseInt(variation.id),
+                        product_id: parentProductId ? parseInt(parentProductId) : parseInt(variation.id), // Use parent ID for variable products
+                        variation_id: parseInt(variation.id), // Store variation ID separately
                         name: variation.name || '', // Use variation name
                         attributes: selectedAttributes || {} // Store selected attributes for "Any" variations
                     }
