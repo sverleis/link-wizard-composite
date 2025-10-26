@@ -356,6 +356,7 @@ class LWWC_Composite_URL_Mapper {
 		$cart_item_data = array();
 		
 		// Format the components for WooCommerce Composite Products.
+		// WooCommerce Composite Products expects $_GET parameters, not just cart_item_data!
 		if ( isset( $configuration['components'] ) && ! empty( $configuration['components'] ) ) {
 			$cart_item_data['composite_data'] = array();
 			
@@ -366,18 +367,29 @@ class LWWC_Composite_URL_Mapper {
 						'quantity'   => isset( $component_data['quantity'] ) ? absint( $component_data['quantity'] ) : 1,
 					);
 					
+					// Set $_GET parameters for WooCommerce Composite Products to read.
+					$_GET['wccp_component_selection'][ $component_id ] = absint( $component_data['product_id'] );
+					$_GET['wccp_component_quantity'][ $component_id ] = isset( $component_data['quantity'] ) ? absint( $component_data['quantity'] ) : 1;
+					
 					// Add variation attributes if present (for variable products with "Any" attributes).
 					if ( isset( $component_data['attributes'] ) && ! empty( $component_data['attributes'] ) ) {
-						$cart_item_data['composite_data'][ $component_id ]['attributes'] = $component_data['attributes'];
 						error_log( 'Link Wizard for Composites: Adding attributes for component ' . $component_id . ': ' . wp_json_encode( $component_data['attributes'] ) );
+						
+						// Set attribute $_GET parameters (wccp_attribute_pa_color_c1=blue, etc.)
+						foreach ( $component_data['attributes'] as $attr_name => $attr_value ) {
+							$_GET[ 'wccp_attribute_' . $attr_name . '_' . $component_id ] = sanitize_text_field( $attr_value );
+							error_log( 'Link Wizard for Composites: Setting $_GET[wccp_attribute_' . $attr_name . '_' . $component_id . '] = ' . $attr_value );
+						}
 					}
 				}
 			}
 		}
 		
 		error_log( 'Link Wizard for Composites: Cart item data: ' . wp_json_encode( $cart_item_data ) );
+		error_log( 'Link Wizard for Composites: $_GET parameters: ' . wp_json_encode( $_GET ) );
 		
 		// Add to cart using WooCommerce's method.
+		// WooCommerce Composite Products will read the $_GET parameters we just set.
 		try {
 			$cart_item_key = WC()->cart->add_to_cart(
 				$product->get_id(),
