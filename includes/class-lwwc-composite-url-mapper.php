@@ -365,6 +365,12 @@ class LWWC_Composite_URL_Mapper {
 						'product_id' => absint( $component_data['product_id'] ),
 						'quantity'   => isset( $component_data['quantity'] ) ? absint( $component_data['quantity'] ) : 1,
 					);
+					
+					// Add variation attributes if present (for variable products with "Any" attributes).
+					if ( isset( $component_data['attributes'] ) && ! empty( $component_data['attributes'] ) ) {
+						$cart_item_data['composite_data'][ $component_id ]['attributes'] = $component_data['attributes'];
+						error_log( 'Link Wizard for Composites: Adding attributes for component ' . $component_id . ': ' . wp_json_encode( $component_data['attributes'] ) );
+					}
 				}
 			}
 		}
