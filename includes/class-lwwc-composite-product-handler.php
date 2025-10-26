@@ -162,26 +162,14 @@ class LWWC_Composite_Product_Handler implements LWWC_Product_Handler_Interface {
 
 			// Check if this is a variable product.
 			if ( $option_product->is_type( 'variable' ) ) {
-				// For variable products, get all variations.
-				$variations = $option_product->get_available_variations();
-				
-				foreach ( $variations as $variation_data ) {
-					$variation = wc_get_product( $variation_data['variation_id'] );
-					
-					if ( ! $variation ) {
-						continue;
-					}
-					
-					// Format variation name with attributes.
-					$variation_name = $option_product->get_name() . ' - ' . wc_get_formatted_variation( $variation, true );
-					
-					$options[] = array(
-						'id'    => $variation->get_id(),
-						'name'  => $variation_name,
-						'price' => $variation->get_price_html(),
-						'type'  => 'variation',
-					);
-				}
+				// For variable products, include the parent product with attributes.
+				$options[] = array(
+					'id'         => $option_product->get_id(),
+					'name'       => $option_product->get_name(),
+					'price'      => $option_product->get_price_html(),
+					'type'       => 'variable',
+					'attributes' => $this->get_variable_product_attributes( $option_product ),
+				);
 			} else {
 				// For simple and other product types, add as is.
 				$options[] = array(
@@ -194,6 +182,129 @@ class LWWC_Composite_Product_Handler implements LWWC_Product_Handler_Interface {
 		}
 
 		return $options;
+	}
+
+	/**
+	 * Get attributes for a variable product (similar to core plugin).
+	 *
+	 * @param WC_Product $product Variable product.
+	 * @return array Array of attributes with values.
+	 */
+	private function get_variable_product_attributes( $product ) {
+		if ( ! $product->is_type( 'variable' ) ) {
+			return array();
+		}
+
+		$attributes         = array();
+		$product_attributes = $product->get_attributes();
+
+		foreach ( $product_attributes as $attribute_name => $attribute ) {
+			if ( $attribute->is_taxonomy() ) {
+				// Taxonomy-based attribute (like color, size).
+				$terms            = wc_get_product_terms( $product->get_id(), $attribute->get_name(), array( 'fields' => 'all' ) );
+				$attribute_values = array();
+
+				foreach ( $terms as $term ) {
+					$attribute_values[] = array(
+						'id'   => $term->term_id,
+						'name' => $term->name,
+						'slug' => $term->slug,
+					);
+				}
+
+				$attributes[] = array(
+					'name'   => wc_attribute_label( $attribute->get_name() ),
+					'slug'   => $attribute->get_name(), // This is already correct (e.g., "pa_color").
+					'values' => $attribute_values,
+				);
+			} else {
+				// Custom attribute.
+				$attribute_values = $attribute->get_options();
+				$values           = array();
+
+				foreach ( $attribute_values as $value ) {
+					$values[] = array(
+						'id'   => sanitize_title( $value ),
+						'name' => $value,
+						'slug' => sanitize_title( $value ),
+					);
+				}
+
+				$attributes[] = array(
+					'name'   => $attribute->get_name(),
+					'slug'   => sanitize_title( $attribute->get_name() ), // Convert "Logo" to "logo".
+					'values' => $values,
+				);
+			}
+		}
+
+		return $attributes;
+	}
+
+	/**
+	 * Get filtered variations for a variable product (similar to core plugin).
+	 *
+	 * @param WC_Product $product Variable product.
+	 * @param array      $selected_attributes Selected attribute values.
+	 * @return array Array of variation data.
+	 */
+	public function get_filtered_variations( $product, $selected_attributes = array() ) {
+		if ( ! $product->is_type( 'variable' ) ) {
+			return array();
+		}
+
+		$results    = array();
+		$variations = $product->get_available_variations();
+
+		foreach ( $variations as $variation ) {
+			// Check if this variation matches the selected attributes.
+			if ( ! empty( $selected_attributes ) ) {
+				$matches_attributes = true;
+
+				foreach ( $selected_attributes as $attribute_name => $attribute_value ) {
+					// WooCommerce stores variation attributes with 'attribute_' prefix.
+					// We need to handle both the normalized slug and the original attribute name.
+					$attribute_key_with_prefix = 'attribute_' . $attribute_name;
+
+					// Also try with the original attribute name (for backward compatibility).
+					$original_attribute_name = str_replace( 'pa_', '', $attribute_name );
+					$attribute_key_original  = 'attribute_' . $original_attribute_name;
+
+					if ( isset( $variation['attributes'][ $attribute_key_with_prefix ] ) ) {
+						if ( strtolower( $variation['attributes'][ $attribute_key_with_prefix ] ) !== strtolower( $attribute_value ) ) {
+							$matches_attributes = false;
+							break;
+						}
+					} elseif ( isset( $variation['attributes'][ $attribute_key_original ] ) ) {
+						if ( strtolower( $variation['attributes'][ $attribute_key_original ] ) !== strtolower( $attribute_value ) ) {
+							$matches_attributes = false;
+							break;
+						}
+					} else {
+						$matches_attributes = false;
+						break;
+					}
+				}
+
+				// Skip this variation if it doesn't match the selected attributes.
+				if ( ! $matches_attributes ) {
+					continue;
+				}
+			}
+
+			$variation_product = wc_get_product( $variation['variation_id'] );
+			if ( $variation_product && $variation_product->is_purchasable() && $variation_product->is_in_stock() ) {
+				$results[] = array(
+					'id'         => $variation_product->get_id(),
+					'name'       => $variation_product->get_name(),
+					'sku'        => $variation_product->get_sku(),
+					'price'      => $variation_product->get_price_html(),
+					'attributes' => $variation['attributes'],
+				);
+			}
+		}
+
+		return $results;
 	}
 
 	/**
