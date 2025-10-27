@@ -49,6 +49,7 @@ class LWWC_Composite_URL_Mapper {
 	 */
 	private function debug_log( $message ) {
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Only logs when WP_DEBUG is enabled.
 			error_log( 'Link Wizard for Composites: ' . $message );
 		}
 	}
@@ -180,9 +181,9 @@ class LWWC_Composite_URL_Mapper {
 		$mapping_id = 'cp' . $product_id . '_' . substr( md5( wp_json_encode( $configuration ) ), 0, 8 );
 
 		// Check if this mapping already exists.
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is validated and safe.
 		$existing_mapping = $wpdb->get_var(
-			$wpdb->prepare( "SELECT mapping_id FROM {$table_name} WHERE mapping_id = %s", $mapping_id )
+			$wpdb->prepare( "SELECT mapping_id FROM {$table_name} WHERE mapping_id = %s", $mapping_id ) // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		);
 
 		if ( $existing_mapping ) {
@@ -234,9 +235,9 @@ class LWWC_Composite_URL_Mapper {
 		$table_name = $wpdb->prefix . self::TABLE_NAME;
 
 		// Look up the mapping in the database.
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is validated and safe.
 		$result = $wpdb->get_row(
-			$wpdb->prepare( "SELECT configuration, product_id FROM {$table_name} WHERE mapping_id = %s", $mapping_id ),
+			$wpdb->prepare( "SELECT configuration, product_id FROM {$table_name} WHERE mapping_id = %s", $mapping_id ), // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 			ARRAY_A
 		);
 
@@ -411,6 +412,7 @@ class LWWC_Composite_URL_Mapper {
 			// Apply coupon from URL parameter if provided (e.g., ?coupon=SAVE10).
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Public checkout link, no nonce needed.
 			if ( isset( $_GET['coupon'] ) && ! empty( $_GET['coupon'] ) ) {
+				// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Public checkout link, no nonce needed.
 				$coupon_code = sanitize_text_field( wp_unslash( $_GET['coupon'] ) );
 				$this->debug_log( 'Applying coupon from URL: ' . $coupon_code );
 				WC()->cart->apply_coupon( $coupon_code );
@@ -452,7 +454,9 @@ class LWWC_Composite_URL_Mapper {
 	private function add_composite_to_cart( $product, $configuration, $quantity = 1 ) {
 		// CRITICAL: Store original $_GET to prevent cross-contamination between composites.
 		// Since $_GET is GLOBAL and persistent, we need to restore it after each composite.
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Storing checkout link parameters, no nonce needed.
 		$original_get = $_GET;
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Storing checkout link parameters, no nonce needed.
 		$original_request = $_REQUEST;
 		
 		// Build cart item data with composite configuration.
