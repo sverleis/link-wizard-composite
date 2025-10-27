@@ -163,6 +163,9 @@ class LWWC_Composite_Product_Handler implements LWWC_Product_Handler_Interface {
 
 		// Get product IDs that can be used for this component.
 		$option_ids = $component->get_options();
+		
+		// Get the default option ID for this component.
+		$default_option_id = $component->get_default_option();
 
 		foreach ( $option_ids as $option_id ) {
 			$option_product = wc_get_product( $option_id );
@@ -180,14 +183,16 @@ class LWWC_Composite_Product_Handler implements LWWC_Product_Handler_Interface {
 					'price'      => $option_product->get_price_html(),
 					'type'       => 'variable',
 					'attributes' => $this->get_variable_product_attributes( $option_product ),
+					'is_default' => ( $default_option_id && $option_id == $default_option_id ), // Mark if this is the default.
 				);
 			} else {
 				// For simple and other product types, add as is.
 				$options[] = array(
-					'id'    => $option_product->get_id(),
-					'name'  => $option_product->get_name(),
-					'price' => $option_product->get_price_html(),
-					'type'  => $option_product->get_type(),
+					'id'         => $option_product->get_id(),
+					'name'       => $option_product->get_name(),
+					'price'      => $option_product->get_price_html(),
+					'type'       => $option_product->get_type(),
+					'is_default' => ( $default_option_id && $option_id == $default_option_id ), // Mark if this is the default.
 				);
 			}
 		}
