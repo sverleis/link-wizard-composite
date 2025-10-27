@@ -255,18 +255,15 @@ class CompositeProductConfig extends Component {
 
             if (response.checkout_url) {
                 // Create a unique ID for this specific configuration
-                // If editing an existing product, preserve its unique_id
-                // Otherwise, use the checkout_url's hash to ensure each configuration is unique
-                let uniqueId;
+                // Generate new unique_id from hash for both new and edited products
+                // This ensures the edit creates a replacement with a new unique_id
+                const urlMatch = response.checkout_url.match(/cp\d+_([a-f0-9]+)/);
+                const configHash = urlMatch ? urlMatch[1] : Date.now();
+                const uniqueId = `${product.id}_${configHash}`;
+                
                 if (isProductSelected && product.unique_id) {
-                    // Editing: Keep the same unique_id
-                    uniqueId = product.unique_id;
-                    console.log('Composite: Editing - preserving unique_id:', uniqueId);
+                    console.log('Composite: Editing - generating NEW unique_id to replace old:', product.unique_id, '→', uniqueId);
                 } else {
-                    // Adding new: Generate new unique_id from hash
-                    const urlMatch = response.checkout_url.match(/cp\d+_([a-f0-9]+)/);
-                    const configHash = urlMatch ? urlMatch[1] : Date.now();
-                    uniqueId = `${product.id}_${configHash}`;
                     console.log('Composite: Adding new - generated unique_id:', uniqueId);
                 }
                 
@@ -292,19 +289,15 @@ class CompositeProductConfig extends Component {
                 } else {
                     // In checkout-link mode: Check if we're editing or adding new
                     if (isProductSelected) {
-                        // Editing existing composite: Replace it
-                        console.log('Composite: Updating existing product in checkout-link mode');
+                        // Editing existing composite: Remove old and add new (with new unique_id)
+                        console.log('Composite: Replacing existing product in checkout-link mode');
                         setSelectedProducts(prev => {
-                            return prev.map(p => {
-                                // Replace the composite product with the same unique_id
-                                // (or same id if no unique_id exists for backwards compatibility)
-                                if (p.type === 'composite' && 
-                                    ((p.unique_id && p.unique_id === product.unique_id) || 
-                                     (!p.unique_id && p.id === product.id))) {
-                                    return updatedProduct;
-                                }
-                                return p;
-                            });
+                            // Remove the old product (by its old unique_id)
+                            const filtered = prev.filter(p => 
+                                !(p.type === 'composite' && p.unique_id === product.unique_id)
+                            );
+                            // Add the new product (with its new unique_id)
+                            return [...filtered, updatedProduct];
                         });
                     } else {
                         // Adding new composite: Add it to the list

@@ -288,6 +288,7 @@ class LWWC_Composite_URL_Mapper {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$products_param = sanitize_text_field( wp_unslash( $_GET['products'] ) );
 
+		error_log( '🔍 LWWC Composite: Checking products param: ' . $products_param );
 		$this->debug_log( 'Checking products param: ' . $products_param );
 
 		// Check if this contains a composite mapping (cp prefix).
