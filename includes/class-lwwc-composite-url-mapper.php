@@ -182,7 +182,7 @@ class LWWC_Composite_URL_Mapper {
 		// Check if this mapping already exists.
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$existing_mapping = $wpdb->get_var(
-			$wpdb->prepare( "SELECT mapping_id FROM {$wpdb->prefix}" . self::TABLE_NAME . " WHERE mapping_id = %s", $mapping_id )
+			$wpdb->prepare( "SELECT mapping_id FROM {$table_name} WHERE mapping_id = %s", $mapping_id )
 		);
 
 		if ( $existing_mapping ) {
@@ -236,7 +236,7 @@ class LWWC_Composite_URL_Mapper {
 		// Look up the mapping in the database.
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$result = $wpdb->get_row(
-			$wpdb->prepare( "SELECT configuration, product_id FROM {$wpdb->prefix}" . self::TABLE_NAME . " WHERE mapping_id = %s", $mapping_id ),
+			$wpdb->prepare( "SELECT configuration, product_id FROM {$table_name} WHERE mapping_id = %s", $mapping_id ),
 			ARRAY_A
 		);
 
@@ -364,9 +364,11 @@ class LWWC_Composite_URL_Mapper {
 		}
 
 		// STEP 2: Process composite products.
-		$has_composite = ! empty( $composite_products );
+		$has_composite      = ! empty( $composite_products );
+		$composites_added   = 0;
+		$total_composites   = count( $composite_products );
 		
-		foreach ( $composite_products as $composite_product ) {
+		foreach ( $composite_products as $index => $composite_product ) {
 			$id       = $composite_product['id'];
 			$quantity = $composite_product['quantity'];
 			
@@ -384,51 +386,55 @@ class LWWC_Composite_URL_Mapper {
 				continue;
 			}
 
-			$this->debug_log( 'Found composite product ' . $config['product_id'] . ', adding to cart...' );
+			$this->debug_log( 'Found composite product ' . $config['product_id'] . ', adding to cart (' . ( $index + 1 ) . '/' . $total_composites . ')...' );
 			
 			$added = $this->add_composite_to_cart( $product, $config['configuration'], $quantity );
 			
 			if ( $added ) {
-				$this->debug_log( 'Added to cart successfully, cart contents: ' . count( WC()->cart->get_cart() ) . ' items' );
-				
-				// Calculate cart totals to ensure everything is ready.
-				WC()->cart->calculate_totals();
+				$composites_added++;
+				$this->debug_log( 'Added composite ' . $composites_added . '/' . $total_composites . ' successfully, cart contents: ' . count( WC()->cart->get_cart() ) . ' items' );
 				
 				// Apply coupon if provided in configuration.
 				if ( isset( $config['configuration']['coupon'] ) && ! empty( $config['configuration']['coupon'] ) ) {
 					WC()->cart->apply_coupon( sanitize_text_field( $config['configuration']['coupon'] ) );
 				}
-				
-				// Also check for coupon in URL parameter (e.g., ?coupon=SAVE10).
-				// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-				if ( isset( $_GET['coupon'] ) && ! empty( $_GET['coupon'] ) ) {
-					$coupon_code = sanitize_text_field( wp_unslash( $_GET['coupon'] ) );
-					$this->debug_log( 'Applying coupon from URL: ' . $coupon_code );
-					WC()->cart->apply_coupon( $coupon_code );
-				}
-				
-				// CRITICAL: Persist the cart session.
-				// This ensures the cart is saved before we redirect.
-				WC()->session->set( 'cart', WC()->cart->get_cart_for_session() );
-				WC()->session->set( 'cart_totals', WC()->cart->get_totals() );
-				
-				// Save the session data.
-				if ( method_exists( WC()->session, 'save_data' ) ) {
-					WC()->session->save_data();
-				}
-				
-				// CRITICAL: Remove the products parameter so WooCommerce's handler doesn't process it.
-				// This prevents WooCommerce from trying to add the composite product again.
-				unset( $_GET['products'] );
-				unset( $_REQUEST['products'] );
-				
-				// Redirect to checkout.
-				$this->debug_log( 'Redirecting to checkout: ' . wc_get_checkout_url() );
-				wp_safe_redirect( wc_get_checkout_url() );
-				exit;
 			} else {
-				$this->debug_log( 'Failed to add to cart' );
+				$this->debug_log( 'Failed to add composite product ' . $config['product_id'] );
 			}
+		}
+		
+		// STEP 3: Finalize and redirect (after ALL products are added).
+		if ( $composites_added > 0 || ! empty( $simple_products ) ) {
+			// Calculate cart totals to ensure everything is ready.
+			WC()->cart->calculate_totals();
+			
+			// Apply coupon from URL parameter if provided (e.g., ?coupon=SAVE10).
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Public checkout link, no nonce needed.
+			if ( isset( $_GET['coupon'] ) && ! empty( $_GET['coupon'] ) ) {
+				$coupon_code = sanitize_text_field( wp_unslash( $_GET['coupon'] ) );
+				$this->debug_log( 'Applying coupon from URL: ' . $coupon_code );
+				WC()->cart->apply_coupon( $coupon_code );
+			}
+			
+			// CRITICAL: Persist the cart session.
+			// This ensures the cart is saved before we redirect.
+			WC()->session->set( 'cart', WC()->cart->get_cart_for_session() );
+			WC()->session->set( 'cart_totals', WC()->cart->get_totals() );
+			
+			// Save the session data.
+			if ( method_exists( WC()->session, 'save_data' ) ) {
+				WC()->session->save_data();
+			}
+			
+			// CRITICAL: Remove the products parameter so WooCommerce's handler doesn't process it.
+			// This prevents WooCommerce from trying to add the composite products again.
+			unset( $_GET['products'] );
+			unset( $_REQUEST['products'] );
+			
+			// Redirect to checkout.
+			$this->debug_log( 'Redirecting to checkout with ' . $composites_added . ' composite(s) and ' . count( $simple_products ) . ' simple product(s)' );
+			wp_safe_redirect( wc_get_checkout_url() );
+			exit;
 		}
 	}
 
@@ -505,6 +511,7 @@ class LWWC_Composite_URL_Mapper {
 		}
 		
 		$this->debug_log( 'Cart item data: ' . wp_json_encode( $cart_item_data ) );
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Debugging checkout link parameters, no nonce needed.
 		$this->debug_log( '$_GET parameters: ' . wp_json_encode( $_GET ) );
 		
 		// Add to cart using WooCommerce's method.
