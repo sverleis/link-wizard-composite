@@ -450,6 +450,11 @@ class LWWC_Composite_URL_Mapper {
 	 * @return bool|string Cart item key on success, false on failure.
 	 */
 	private function add_composite_to_cart( $product, $configuration, $quantity = 1 ) {
+		// CRITICAL: Store original $_GET to prevent cross-contamination between composites.
+		// Since $_GET is GLOBAL and persistent, we need to restore it after each composite.
+		$original_get = $_GET;
+		$original_request = $_REQUEST;
+		
 		// Build cart item data with composite configuration.
 		$cart_item_data = array();
 		
@@ -527,9 +532,19 @@ class LWWC_Composite_URL_Mapper {
 			
 			$this->debug_log( 'Cart item key: ' . ( $cart_item_key ? $cart_item_key : 'FALSE' ) );
 			
+			// CRITICAL: Restore original $_GET to prevent cross-contamination with the next composite.
+			// This ensures each composite's $_GET parameters don't interfere with each other.
+			$_GET = $original_get;
+			$_REQUEST = $original_request;
+			
 			return $cart_item_key;
 		} catch ( Exception $e ) {
 			$this->debug_log( 'Error adding to cart - ' . $e->getMessage() );
+			
+			// CRITICAL: Restore original $_GET even on error!
+			$_GET = $original_get;
+			$_REQUEST = $original_request;
+			
 			return false;
 		}
 	}
