@@ -65,18 +65,27 @@ class CompositeProductConfig extends Component {
             if (data.components) {
                 this.setState({ components: data.components });
 
-                // Initialize selections with first/default option for each component.
-                const initialSelections = {};
-                data.components.forEach(component => {
-                    if (component.options && component.options.length > 0) {
-                        const defaultOption = component.options[0];
-                        initialSelections[component.id] = {
-                            product_id: defaultOption.id,
-                            name: defaultOption.name, // Store the product name
-                            quantity: component.quantity.min || 1
-                        };
-                    }
-                });
+                // Check if product already has component_selections (e.g., from editing)
+                let initialSelections = {};
+                
+                if (this.props.product.component_selections && Object.keys(this.props.product.component_selections).length > 0) {
+                    // Editing: Use existing selections
+                    console.log('CompositeProductConfig: Using existing component_selections from product');
+                    initialSelections = this.props.product.component_selections;
+                } else {
+                    // New: Initialize selections with first/default option for each component
+                    console.log('CompositeProductConfig: Initializing with default selections');
+                    data.components.forEach(component => {
+                        if (component.options && component.options.length > 0) {
+                            const defaultOption = component.options[0];
+                            initialSelections[component.id] = {
+                                product_id: defaultOption.id,
+                                name: defaultOption.name,
+                                quantity: component.quantity.min || 1
+                            };
+                        }
+                    });
+                }
 
                 this.setState({ selections: initialSelections });
             }
