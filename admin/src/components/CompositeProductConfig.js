@@ -35,6 +35,10 @@ class CompositeProductConfig extends Component {
     }
 
     componentDidMount() {
+        console.log('CompositeProductConfig: componentDidMount');
+        console.log('CompositeProductConfig: product props:', this.props.product);
+        console.log('CompositeProductConfig: isProductSelected:', this.props.isProductSelected);
+        console.log('CompositeProductConfig: product.unique_id:', this.props.product?.unique_id);
         this.loadCompositeData();
     }
 
