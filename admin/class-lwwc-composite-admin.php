@@ -28,6 +28,7 @@ class LWWC_Composite_Admin {
 	 */
 	private function debug_log( $message ) {
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Only logs when WP_DEBUG is enabled.
 			error_log( 'Link Wizard for Composites: ' . $message );
 		}
 	}
