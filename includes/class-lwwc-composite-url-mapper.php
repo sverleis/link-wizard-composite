@@ -49,7 +49,7 @@ class LWWC_Composite_URL_Mapper {
 	 */
 	private function debug_log( $message ) {
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			$this->debug_log( '' . $message );
+			error_log( 'Link Wizard for Composites: ' . $message );
 		}
 	}
 
