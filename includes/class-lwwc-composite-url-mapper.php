@@ -363,9 +363,17 @@ class LWWC_Composite_URL_Mapper {
 				// Calculate cart totals to ensure everything is ready.
 				WC()->cart->calculate_totals();
 				
-				// Apply coupon if provided.
+				// Apply coupon if provided in configuration.
 				if ( isset( $config['configuration']['coupon'] ) && ! empty( $config['configuration']['coupon'] ) ) {
 					WC()->cart->apply_coupon( sanitize_text_field( $config['configuration']['coupon'] ) );
+				}
+				
+				// Also check for coupon in URL parameter (e.g., ?coupon=SAVE10).
+				// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+				if ( isset( $_GET['coupon'] ) && ! empty( $_GET['coupon'] ) ) {
+					$coupon_code = sanitize_text_field( wp_unslash( $_GET['coupon'] ) );
+					error_log( 'Link Wizard for Composites: Applying coupon from URL: ' . $coupon_code );
+					WC()->cart->apply_coupon( $coupon_code );
 				}
 				
 				// CRITICAL: Persist the cart session.
