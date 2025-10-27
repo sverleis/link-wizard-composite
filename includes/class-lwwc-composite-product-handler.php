@@ -733,10 +733,11 @@ class LWWC_Composite_Product_Handler implements LWWC_Product_Handler_Interface {
 				// Check if component has options by looking at its configuration.
 				$component_options = $component['options'] ?? array();
 				if ( empty( $component_options ) ) {
+					$component_title = $component['title'] ?? 'Unknown';
 					/* translators: %s is the component title. */
 					$warnings[] = sprintf(
 						__( 'Component "%s" has no available options.', 'link-wizard-composite' ),
-						$component['title'] ?? 'Unknown'
+						$component_title
 					);
 				}
 			}
