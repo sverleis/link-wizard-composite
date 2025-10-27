@@ -22,13 +22,24 @@ if ( ! defined( 'ABSPATH' ) ) {
 class LWWC_Composite_Admin {
 
 	/**
+	 * Debug logging helper (only logs if WP_DEBUG is enabled).
+	 *
+	 * @param string $message The message to log.
+	 */
+	private function debug_log( $message ) {
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			error_log( 'Link Wizard for Composites: ' . $message );
+		}
+	}
+
+	/**
 	 * Initialize the admin assets.
 	 */
 	public function init() {
 		// Enqueue admin scripts on Link Wizard pages.
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );
 
-		error_log( 'Link Wizard for Composites: Admin assets handler initialized' );
+		$this->debug_log( 'Admin assets handler initialized' );
 	}
 
 	/**
@@ -85,7 +96,7 @@ class LWWC_Composite_Admin {
 				)
 			);
 
-			error_log( 'Link Wizard for Composites: Admin assets enqueued' );
+			$this->debug_log( 'Admin assets enqueued' );
 		}
 	}
 
@@ -97,6 +108,7 @@ class LWWC_Composite_Admin {
 	 */
 	private function is_link_wizard_page( $hook ) {
 		// Link Wizard uses admin.php?page=link-wizard-for-woocommerce
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Checking admin page slug only.
 		if ( isset( $_GET['page'] ) && $_GET['page'] === 'link-wizard-for-woocommerce' ) {
 			return true;
 		}

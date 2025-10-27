@@ -38,6 +38,17 @@ class LWWC_Composite_REST_API {
 	const NAMESPACE = 'lwwc-composite/v1';
 
 	/**
+	 * Debug logging helper (only logs if WP_DEBUG is enabled).
+	 *
+	 * @param string $message The message to log.
+	 */
+	private function debug_log( $message ) {
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			$this->debug_log( '' . $message );
+		}
+	}
+
+	/**
 	 * Product handler instance.
 	 *
 	 * @var LWWC_Composite_Product_Handler
@@ -51,7 +62,7 @@ class LWWC_Composite_REST_API {
 		// Register REST API routes.
 		add_action( 'rest_api_init', array( $this, 'register_routes' ) );
 
-		error_log( 'Link Wizard for Composites: REST API initialized' );
+		$this->debug_log( 'REST API initialized' );
 	}
 
 	/**
@@ -182,7 +193,7 @@ class LWWC_Composite_REST_API {
 			)
 		);
 
-		error_log( 'Link Wizard for Composites: REST API routes registered' );
+		$this->debug_log( 'REST API routes registered' );
 	}
 
 	/**

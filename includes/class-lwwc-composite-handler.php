@@ -25,13 +25,24 @@ if ( ! defined( 'ABSPATH' ) ) {
 class LWWC_Composite_Handler {
 
 	/**
+	 * Debug logging helper (only logs if WP_DEBUG is enabled).
+	 *
+	 * @param string $message The message to log.
+	 */
+	private function debug_log( $message ) {
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			error_log( 'Link Wizard for Composites: ' . $message );
+		}
+	}
+
+	/**
 	 * Initialize the handler.
 	 *
 	 * This is called from the main plugin file after all dependencies are confirmed.
 	 */
 	public function init() {
 		// Log initialization for debugging.
-		error_log( 'Link Wizard for Composites: Handler initialized' );
+		$this->debug_log( 'Handler initialized' );
 
 		// Register this plugin with Link Wizard's addon system.
 		add_filter( 'lwwc_addon_capabilities', array( $this, 'register_capabilities' ), 10, 2 );
@@ -61,7 +72,7 @@ class LWWC_Composite_Handler {
 		$url_mapper = new LWWC_Composite_URL_Mapper();
 		$url_mapper->init();
 
-		error_log( 'Link Wizard for Composites: URL Mapper loaded' );
+		$this->debug_log( 'URL Mapper loaded' );
 	}
 
 	/**
@@ -76,7 +87,7 @@ class LWWC_Composite_Handler {
 		$rest_api = new LWWC_Composite_REST_API();
 		$rest_api->init();
 
-		error_log( 'Link Wizard for Composites: REST API loaded' );
+		$this->debug_log( 'REST API loaded' );
 	}
 
 	/**
@@ -91,7 +102,7 @@ class LWWC_Composite_Handler {
 		$admin = new LWWC_Composite_Admin();
 		$admin->init();
 
-		error_log( 'Link Wizard for Composites: Admin assets loaded' );
+		$this->debug_log( 'Admin assets loaded' );
 	}
 
 	/**
@@ -109,7 +120,7 @@ class LWWC_Composite_Handler {
 		$composite_handler = new LWWC_Composite_Product_Handler();
 		$handler_manager->register_handler( $composite_handler );
 		
-		error_log( 'Link Wizard for Composites: Product handler registered' );
+		$this->debug_log( 'Product handler registered' );
 	}
 
 	/**

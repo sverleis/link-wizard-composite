@@ -28,6 +28,17 @@ if ( ! defined( 'ABSPATH' ) ) {
 class LWWC_Composite_Product_Handler implements LWWC_Product_Handler_Interface {
 
 	/**
+	 * Debug logging helper (only logs if WP_DEBUG is enabled).
+	 *
+	 * @param string $message The message to log.
+	 */
+	private function debug_log( $message ) {
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			error_log( 'Link Wizard for Composites: ' . $message );
+		}
+	}
+
+	/**
 	 * Check if we can handle this product.
 	 *
 	 * @param WC_Product $product The product to check.
@@ -717,6 +728,7 @@ class LWWC_Composite_Product_Handler implements LWWC_Product_Handler_Interface {
 				// Check if component has options by looking at its configuration.
 				$component_options = $component['options'] ?? array();
 				if ( empty( $component_options ) ) {
+					// translators: %s is the component title.
 					$warnings[] = sprintf(
 						__( 'Component "%s" has no available options.', 'link-wizard-composite' ),
 						$component['title'] ?? 'Unknown'

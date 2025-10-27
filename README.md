@@ -1,8 +1,14 @@
-# Link Wizard Composite
+=== Link Wizard for Composites ===
+Contributors: svenleisegang
+Tags: woocommerce, composite products, checkout links, facebook commerce
+Requires at least: 5.8
+Tested up to: 6.8
+Requires PHP: 7.4
+Stable tag: 1.0.0
+License: GPLv2 or later
+License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-**Version**: 1.0.0  
-**Author**: Sven Leisegang  
-**License**: GPL v2 or later
+Enable WooCommerce Composite Products in checkout-links for Facebook Commerce and direct checkout URLs.
 
 ## What is This Plugin?
 

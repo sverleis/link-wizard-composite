@@ -43,6 +43,17 @@ class LWWC_Composite_URL_Mapper {
 	const TABLE_NAME = 'lwwc_composite_url_mappings';
 
 	/**
+	 * Debug logging helper (only logs if WP_DEBUG is enabled).
+	 *
+	 * @param string $message The message to log.
+	 */
+	private function debug_log( $message ) {
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			$this->debug_log( '' . $message );
+		}
+	}
+
+	/**
 	 * Initialize the URL mapper.
 	 *
 	 * Sets up WordPress hooks for:
@@ -60,7 +71,7 @@ class LWWC_Composite_URL_Mapper {
 		// Priority 1 ensures we run before WooCommerce at priority 10.
 		add_action( 'template_redirect', array( $this, 'handle_checkout_link' ), 1 );
 
-		error_log( 'Link Wizard for Composites: URL Mapper initialized' );
+		$this->debug_log( 'URL Mapper initialized' );
 	}
 
 	/**
@@ -89,6 +100,7 @@ class LWWC_Composite_URL_Mapper {
 		$table_name = $wpdb->prefix . self::TABLE_NAME;
 
 		// Check if table already exists.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$table_exists = $wpdb->get_var( $wpdb->prepare( "SHOW TABLES LIKE %s", $table_name ) );
 
 		if ( $table_exists ) {
@@ -111,7 +123,7 @@ class LWWC_Composite_URL_Mapper {
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 		dbDelta( $sql );
 
-		error_log( 'Link Wizard for Composites: Database table created' );
+		$this->debug_log( 'Database table created' );
 	}
 
 	/**
@@ -168,8 +180,9 @@ class LWWC_Composite_URL_Mapper {
 		$mapping_id = 'cp' . $product_id . '_' . substr( md5( wp_json_encode( $configuration ) ), 0, 8 );
 
 		// Check if this mapping already exists.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$existing_mapping = $wpdb->get_var(
-			$wpdb->prepare( "SELECT mapping_id FROM $table_name WHERE mapping_id = %s", $mapping_id )
+			$wpdb->prepare( "SELECT mapping_id FROM {$wpdb->prefix}" . self::TABLE_NAME . " WHERE mapping_id = %s", $mapping_id )
 		);
 
 		if ( $existing_mapping ) {
@@ -178,6 +191,7 @@ class LWWC_Composite_URL_Mapper {
 		}
 
 		// Insert new mapping into database.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 		$wpdb->insert(
 			$table_name,
 			array(
@@ -208,22 +222,39 @@ class LWWC_Composite_URL_Mapper {
 	 * @return array|null Configuration data or null if not found.
 	 */
 	private function get_configuration( $mapping_id ) {
+		// Check cache first.
+		$cache_key = 'lwwc_composite_config_' . $mapping_id;
+		$cached    = wp_cache_get( $cache_key, 'lwwc_composite' );
+		
+		if ( false !== $cached ) {
+			return $cached;
+		}
+		
 		global $wpdb;
 		$table_name = $wpdb->prefix . self::TABLE_NAME;
 
 		// Look up the mapping in the database.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$result = $wpdb->get_row(
-			$wpdb->prepare( "SELECT configuration, product_id FROM $table_name WHERE mapping_id = %s", $mapping_id ),
+			$wpdb->prepare( "SELECT configuration, product_id FROM {$wpdb->prefix}" . self::TABLE_NAME . " WHERE mapping_id = %s", $mapping_id ),
 			ARRAY_A
 		);
 
 		if ( $result ) {
-			return array(
+			$config = array(
 				'product_id'    => (int) $result['product_id'],
 				'configuration' => json_decode( $result['configuration'], true ),
 			);
+			
+			// Cache for 1 hour.
+			wp_cache_set( $cache_key, $config, 'lwwc_composite', HOUR_IN_SECONDS );
+			
+			return $config;
 		}
 
+		// Cache negative result for 5 minutes.
+		wp_cache_set( $cache_key, null, 'lwwc_composite', 5 * MINUTE_IN_SECONDS );
+		
 		return null;
 	}
 
@@ -257,16 +288,16 @@ class LWWC_Composite_URL_Mapper {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$products_param = sanitize_text_field( wp_unslash( $_GET['products'] ) );
 
-		error_log( 'Link Wizard for Composites: Checking products param: ' . $products_param );
+		$this->debug_log( 'Checking products param: ' . $products_param );
 
 		// Check if this contains a composite mapping (cp prefix).
 		if ( strpos( $products_param, 'cp' ) === false ) {
-			error_log( 'Link Wizard for Composites: No cp prefix found, skipping' );
+			$this->debug_log( 'No cp prefix found, skipping' );
 			return; // No composite mapping, do nothing.
 		}
 
 		$processed = true;
-		error_log( 'Link Wizard for Composites: Found composite mapping, processing...' );
+		$this->debug_log( 'Found composite mapping, processing...' );
 
 		// Ensure WooCommerce session is initialized.
 		if ( is_null( WC()->session ) ) {
@@ -308,7 +339,7 @@ class LWWC_Composite_URL_Mapper {
 		// STEP 1: Add simple products FIRST.
 		// This ensures they're in the cart before WooCommerce Composite Products takes over.
 		if ( ! empty( $simple_products ) ) {
-			error_log( 'Link Wizard for Composites: Adding ' . count( $simple_products ) . ' simple product(s) to cart' );
+			$this->debug_log( 'Adding ' . count( $simple_products ) . ' simple product(s) to cart' );
 			
 			foreach ( $simple_products as $simple_product ) {
 				$product_id = $simple_product['id'];
@@ -317,7 +348,7 @@ class LWWC_Composite_URL_Mapper {
 				// Validate product exists.
 				$product = wc_get_product( $product_id );
 				if ( ! $product ) {
-					error_log( 'Link Wizard for Composites: Simple product ' . $product_id . ' not found, skipping' );
+					$this->debug_log( 'Simple product ' . $product_id . ' not found, skipping' );
 					continue;
 				}
 				
@@ -325,9 +356,9 @@ class LWWC_Composite_URL_Mapper {
 				$added = WC()->cart->add_to_cart( $product_id, $quantity );
 				
 				if ( $added ) {
-					error_log( 'Link Wizard for Composites: Added simple product ' . $product_id . ' (qty: ' . $quantity . ') to cart' );
+					$this->debug_log( 'Added simple product ' . $product_id . ' (qty: ' . $quantity . ') to cart' );
 				} else {
-					error_log( 'Link Wizard for Composites: Failed to add simple product ' . $product_id . ' to cart' );
+					$this->debug_log( 'Failed to add simple product ' . $product_id . ' to cart' );
 				}
 			}
 		}
@@ -342,23 +373,23 @@ class LWWC_Composite_URL_Mapper {
 			// Process the composite mapping.
 			$config = $this->get_configuration( $id );
 			if ( ! $config ) {
-				error_log( 'Link Wizard for Composites: Configuration not found for ' . $id );
+				$this->debug_log( 'Configuration not found for ' . $id );
 				continue;
 			}
 
 			// Get the composite product.
 			$product = wc_get_product( $config['product_id'] );
 			if ( ! $product || ! $product->is_type( 'composite' ) ) {
-				error_log( 'Link Wizard for Composites: Product not found or not composite' );
+				$this->debug_log( 'Product not found or not composite' );
 				continue;
 			}
 
-			error_log( 'Link Wizard for Composites: Found composite product ' . $config['product_id'] . ', adding to cart...' );
+			$this->debug_log( 'Found composite product ' . $config['product_id'] . ', adding to cart...' );
 			
 			$added = $this->add_composite_to_cart( $product, $config['configuration'], $quantity );
 			
 			if ( $added ) {
-				error_log( 'Link Wizard for Composites: Added to cart successfully, cart contents: ' . count( WC()->cart->get_cart() ) . ' items' );
+				$this->debug_log( 'Added to cart successfully, cart contents: ' . count( WC()->cart->get_cart() ) . ' items' );
 				
 				// Calculate cart totals to ensure everything is ready.
 				WC()->cart->calculate_totals();
@@ -372,7 +403,7 @@ class LWWC_Composite_URL_Mapper {
 				// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 				if ( isset( $_GET['coupon'] ) && ! empty( $_GET['coupon'] ) ) {
 					$coupon_code = sanitize_text_field( wp_unslash( $_GET['coupon'] ) );
-					error_log( 'Link Wizard for Composites: Applying coupon from URL: ' . $coupon_code );
+					$this->debug_log( 'Applying coupon from URL: ' . $coupon_code );
 					WC()->cart->apply_coupon( $coupon_code );
 				}
 				
@@ -392,11 +423,11 @@ class LWWC_Composite_URL_Mapper {
 				unset( $_REQUEST['products'] );
 				
 				// Redirect to checkout.
-				error_log( 'Link Wizard for Composites: Redirecting to checkout: ' . wc_get_checkout_url() );
+				$this->debug_log( 'Redirecting to checkout: ' . wc_get_checkout_url() );
 				wp_safe_redirect( wc_get_checkout_url() );
 				exit;
 			} else {
-				error_log( 'Link Wizard for Composites: Failed to add to cart' );
+				$this->debug_log( 'Failed to add to cart' );
 			}
 		}
 	}
@@ -434,18 +465,18 @@ class LWWC_Composite_URL_Mapper {
 					$_GET['wccps_' . $component_id ] = absint( $component_data['product_id'] );
 					$_GET['wccpq_' . $component_id ] = isset( $component_data['quantity'] ) ? absint( $component_data['quantity'] ) : 1;
 					
-					error_log( 'Link Wizard for Composites: Setting $_GET[wccps_' . $component_id . '] = ' . $component_data['product_id'] );
-					error_log( 'Link Wizard for Composites: Setting $_GET[wccpq_' . $component_id . '] = ' . ( isset( $component_data['quantity'] ) ? $component_data['quantity'] : 1 ) );
+					$this->debug_log( 'Setting $_GET[wccps_' . $component_id . '] = ' . $component_data['product_id'] );
+					$this->debug_log( 'Setting $_GET[wccpq_' . $component_id . '] = ' . ( isset( $component_data['quantity'] ) ? $component_data['quantity'] : 1 ) );
 					
 					// Add variation attributes if present (for variable products with "Any" attributes).
 					if ( isset( $component_data['attributes'] ) && ! empty( $component_data['attributes'] ) ) {
-						error_log( 'Link Wizard for Composites: Adding attributes for component ' . $component_id . ': ' . wp_json_encode( $component_data['attributes'] ) );
+						$this->debug_log( 'Adding attributes for component ' . $component_id . ': ' . wp_json_encode( $component_data['attributes'] ) );
 						
 						// Set variation ID parameter (wccpv_c1=82)
 						// Use variation_id if available, otherwise use product_id
 						$variation_id = isset( $component_data['variation_id'] ) ? absint( $component_data['variation_id'] ) : absint( $component_data['product_id'] );
 						$_GET['wccpv_' . $component_id ] = $variation_id;
-						error_log( 'Link Wizard for Composites: Setting $_GET[wccpv_' . $component_id . '] = ' . $variation_id );
+						$this->debug_log( 'Setting $_GET[wccpv_' . $component_id . '] = ' . $variation_id );
 						
 						// Add variation_id to component data (use variation_id if available)
 						$component_cart_data['variation_id'] = $variation_id;
@@ -459,12 +490,12 @@ class LWWC_Composite_URL_Mapper {
 						}
 						$component_cart_data['attributes'] = $formatted_attributes;
 						
-						error_log( 'Link Wizard for Composites: Formatted attributes: ' . wp_json_encode( $formatted_attributes ) );
+						$this->debug_log( 'Formatted attributes: ' . wp_json_encode( $formatted_attributes ) );
 						
 						// Set attribute $_GET parameters (wccp_attribute_pa_color_c1=blue, etc.)
 						foreach ( $component_data['attributes'] as $attr_name => $attr_value ) {
 							$_GET[ 'wccp_attribute_' . $attr_name . '_' . $component_id ] = sanitize_text_field( $attr_value );
-							error_log( 'Link Wizard for Composites: Setting $_GET[wccp_attribute_' . $attr_name . '_' . $component_id . '] = ' . $attr_value );
+							$this->debug_log( 'Setting $_GET[wccp_attribute_' . $attr_name . '_' . $component_id . '] = ' . $attr_value );
 						}
 					}
 					
@@ -473,8 +504,8 @@ class LWWC_Composite_URL_Mapper {
 			}
 		}
 		
-		error_log( 'Link Wizard for Composites: Cart item data: ' . wp_json_encode( $cart_item_data ) );
-		error_log( 'Link Wizard for Composites: $_GET parameters: ' . wp_json_encode( $_GET ) );
+		$this->debug_log( 'Cart item data: ' . wp_json_encode( $cart_item_data ) );
+		$this->debug_log( '$_GET parameters: ' . wp_json_encode( $_GET ) );
 		
 		// Add to cart using WooCommerce's method.
 		// WooCommerce Composite Products will read the $_GET parameters we just set.
@@ -487,11 +518,11 @@ class LWWC_Composite_URL_Mapper {
 				$cart_item_data  // This contains our composite_data.
 			);
 			
-			error_log( 'Link Wizard for Composites: Cart item key: ' . ( $cart_item_key ? $cart_item_key : 'FALSE' ) );
+			$this->debug_log( 'Cart item key: ' . ( $cart_item_key ? $cart_item_key : 'FALSE' ) );
 			
 			return $cart_item_key;
 		} catch ( Exception $e ) {
-			error_log( 'Link Wizard for Composites: Error adding to cart - ' . $e->getMessage() );
+			$this->debug_log( 'Error adding to cart - ' . $e->getMessage() );
 			return false;
 		}
 	}
