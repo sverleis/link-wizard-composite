@@ -354,42 +354,41 @@ class LWWC_Composite_URL_Mapper {
 			}
 
 			error_log( 'Link Wizard for Composites: Found composite product ' . $config['product_id'] . ', adding to cart...' );
+			
+			$added = $this->add_composite_to_cart( $product, $config['configuration'], $quantity );
+			
+			if ( $added ) {
+				error_log( 'Link Wizard for Composites: Added to cart successfully, cart contents: ' . count( WC()->cart->get_cart() ) . ' items' );
 				
-				$added = $this->add_composite_to_cart( $product, $config['configuration'], $quantity );
+				// Calculate cart totals to ensure everything is ready.
+				WC()->cart->calculate_totals();
 				
-				if ( $added ) {
-					error_log( 'Link Wizard for Composites: Added to cart successfully, cart contents: ' . count( WC()->cart->get_cart() ) . ' items' );
-					
-					// Calculate cart totals to ensure everything is ready.
-					WC()->cart->calculate_totals();
-					
-					// Apply coupon if provided.
-					if ( isset( $config['configuration']['coupon'] ) && ! empty( $config['configuration']['coupon'] ) ) {
-						WC()->cart->apply_coupon( sanitize_text_field( $config['configuration']['coupon'] ) );
-					}
-					
-					// CRITICAL: Persist the cart session.
-					// This ensures the cart is saved before we redirect.
-					WC()->session->set( 'cart', WC()->cart->get_cart_for_session() );
-					WC()->session->set( 'cart_totals', WC()->cart->get_totals() );
-					
-					// Save the session data.
-					if ( method_exists( WC()->session, 'save_data' ) ) {
-						WC()->session->save_data();
-					}
-					
-					// CRITICAL: Remove the products parameter so WooCommerce's handler doesn't process it.
-					// This prevents WooCommerce from trying to add the composite product again.
-					unset( $_GET['products'] );
-					unset( $_REQUEST['products'] );
-					
-					// Redirect to checkout.
-					error_log( 'Link Wizard for Composites: Redirecting to checkout: ' . wc_get_checkout_url() );
-					wp_safe_redirect( wc_get_checkout_url() );
-					exit;
-				} else {
-					error_log( 'Link Wizard for Composites: Failed to add to cart' );
+				// Apply coupon if provided.
+				if ( isset( $config['configuration']['coupon'] ) && ! empty( $config['configuration']['coupon'] ) ) {
+					WC()->cart->apply_coupon( sanitize_text_field( $config['configuration']['coupon'] ) );
 				}
+				
+				// CRITICAL: Persist the cart session.
+				// This ensures the cart is saved before we redirect.
+				WC()->session->set( 'cart', WC()->cart->get_cart_for_session() );
+				WC()->session->set( 'cart_totals', WC()->cart->get_totals() );
+				
+				// Save the session data.
+				if ( method_exists( WC()->session, 'save_data' ) ) {
+					WC()->session->save_data();
+				}
+				
+				// CRITICAL: Remove the products parameter so WooCommerce's handler doesn't process it.
+				// This prevents WooCommerce from trying to add the composite product again.
+				unset( $_GET['products'] );
+				unset( $_REQUEST['products'] );
+				
+				// Redirect to checkout.
+				error_log( 'Link Wizard for Composites: Redirecting to checkout: ' . wc_get_checkout_url() );
+				wp_safe_redirect( wc_get_checkout_url() );
+				exit;
+			} else {
+				error_log( 'Link Wizard for Composites: Failed to add to cart' );
 			}
 		}
 	}
