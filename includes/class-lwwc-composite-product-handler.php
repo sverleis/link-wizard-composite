@@ -272,8 +272,8 @@ class LWWC_Composite_Product_Handler implements LWWC_Product_Handler_Interface {
 		$results    = array();
 		$variations = $product->get_available_variations();
 		
-		error_log( 'Composite: get_filtered_variations called for product ' . $product->get_id() );
-		error_log( 'Composite: Total variations found: ' . count( $variations ) );
+		$this->debug_log( 'get_filtered_variations called for product ' . $product->get_id() );
+		$this->debug_log( 'Total variations found: ' . count( $variations ) );
 
 		foreach ( $variations as $variation ) {
 			// Check if this variation matches the selected attributes.
@@ -341,14 +341,14 @@ class LWWC_Composite_Product_Handler implements LWWC_Product_Handler_Interface {
 					'disabled'   => $has_any_attributes, // Mark as disabled but still include it
 				);
 				
-				error_log( 'Composite: Added variation ' . $variation_product->get_id() . ' - ' . $variation_product->get_name() . ' (disabled: ' . ( $has_any_attributes ? 'yes' : 'no' ) . ')' );
-				error_log( 'Composite: Variation attributes: ' . wp_json_encode( $variation['attributes'] ) );
+				$this->debug_log( 'Added variation ' . $variation_product->get_id() . ' - ' . $variation_product->get_name() . ' (disabled: ' . ( $has_any_attributes ? 'yes' : 'no' ) . ')' );
+				$this->debug_log( 'Variation attributes: ' . wp_json_encode( $variation['attributes'] ) );
 			} else {
-				error_log( 'Composite: Could not load variation product ' . $variation['variation_id'] );
+				$this->debug_log( 'Could not load variation product ' . $variation['variation_id'] );
 			}
 		}
 		
-		error_log( 'Composite: Returning ' . count( $results ) . ' variations' );
+		$this->debug_log( 'Returning ' . count( $results ) . ' variations' );
 
 		return $results;
 	}
