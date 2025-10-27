@@ -350,12 +350,16 @@ class CompositeProductConfig extends Component {
 
         // Determine button text based on link type and whether product is already selected
         const isEditing = isProductSelected;
+        console.log('CompositeProductConfig RENDER: isProductSelected =', isProductSelected);
+        console.log('CompositeProductConfig RENDER: isEditing =', isEditing);
+        console.log('CompositeProductConfig RENDER: product.unique_id =', product.unique_id);
         let buttonText;
         if (linkType === 'addToCart') {
             buttonText = isEditing ? 'Update Product' : 'Add to Cart';
         } else {
             buttonText = isEditing ? 'Update Product' : 'Add Product';
         }
+        console.log('CompositeProductConfig RENDER: buttonText =', buttonText);
 
         return (
             <div className="lwwc-composite-config">
