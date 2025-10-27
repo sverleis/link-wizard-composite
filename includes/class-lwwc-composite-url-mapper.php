@@ -268,38 +268,92 @@ class LWWC_Composite_URL_Mapper {
 		$processed = true;
 		error_log( 'Link Wizard for Composites: Found composite mapping, processing...' );
 
-		// Check if we have any composite mappings to process.
-		$has_composite = false;
+		// Ensure WooCommerce session is initialized.
+		if ( is_null( WC()->session ) ) {
+			WC()->initialize_session();
+		}
+
+		// Clear cart first (we'll re-add everything).
+		WC()->cart->empty_cart();
+
+		// Parse products parameter and separate composites from simple products.
 		$products = explode( ',', $products_param );
+		$composite_products = array();
+		$simple_products    = array();
 		
 		foreach ( $products as $product_string ) {
-			list( $id, $quantity ) = explode( ':', $product_string );
+			$parts = explode( ':', $product_string );
+			if ( count( $parts ) !== 2 ) {
+				continue;
+			}
+			
+			list( $id, $quantity ) = $parts;
+			$quantity = (int) $quantity;
+			
 			if ( strpos( $id, 'cp' ) === 0 ) {
-				$has_composite = true;
+				// This is a composite product mapping.
+				$composite_products[] = array(
+					'id'       => $id,
+					'quantity' => $quantity,
+				);
+			} else {
+				// This is a simple product.
+				$simple_products[] = array(
+					'id'       => (int) $id,
+					'quantity' => $quantity,
+				);
+			}
+		}
+
+		// STEP 1: Add simple products FIRST.
+		// This ensures they're in the cart before WooCommerce Composite Products takes over.
+		if ( ! empty( $simple_products ) ) {
+			error_log( 'Link Wizard for Composites: Adding ' . count( $simple_products ) . ' simple product(s) to cart' );
+			
+			foreach ( $simple_products as $simple_product ) {
+				$product_id = $simple_product['id'];
+				$quantity   = $simple_product['quantity'];
 				
-				// Process the composite mapping.
-				$config = $this->get_configuration( $id );
-				if ( ! $config ) {
-					error_log( 'Link Wizard for Composites: Configuration not found for ' . $id );
+				// Validate product exists.
+				$product = wc_get_product( $product_id );
+				if ( ! $product ) {
+					error_log( 'Link Wizard for Composites: Simple product ' . $product_id . ' not found, skipping' );
 					continue;
 				}
-
-				// Get the composite product.
-				$product = wc_get_product( $config['product_id'] );
-				if ( ! $product || ! $product->is_type( 'composite' ) ) {
-					error_log( 'Link Wizard for Composites: Product not found or not composite' );
-					continue;
+				
+				// Add to cart using WooCommerce's standard method.
+				$added = WC()->cart->add_to_cart( $product_id, $quantity );
+				
+				if ( $added ) {
+					error_log( 'Link Wizard for Composites: Added simple product ' . $product_id . ' (qty: ' . $quantity . ') to cart' );
+				} else {
+					error_log( 'Link Wizard for Composites: Failed to add simple product ' . $product_id . ' to cart' );
 				}
+			}
+		}
 
-				error_log( 'Link Wizard for Composites: Found composite product, adding to cart...' );
+		// STEP 2: Process composite products.
+		$has_composite = ! empty( $composite_products );
+		
+		foreach ( $composite_products as $composite_product ) {
+			$id       = $composite_product['id'];
+			$quantity = $composite_product['quantity'];
+			
+			// Process the composite mapping.
+			$config = $this->get_configuration( $id );
+			if ( ! $config ) {
+				error_log( 'Link Wizard for Composites: Configuration not found for ' . $id );
+				continue;
+			}
 
-				// Ensure WooCommerce session is initialized.
-				if ( is_null( WC()->session ) ) {
-					WC()->initialize_session();
-				}
+			// Get the composite product.
+			$product = wc_get_product( $config['product_id'] );
+			if ( ! $product || ! $product->is_type( 'composite' ) ) {
+				error_log( 'Link Wizard for Composites: Product not found or not composite' );
+				continue;
+			}
 
-				// Clear cart and add the composite product.
-				WC()->cart->empty_cart();
+			error_log( 'Link Wizard for Composites: Found composite product ' . $config['product_id'] . ', adding to cart...' );
 				
 				$added = $this->add_composite_to_cart( $product, $config['configuration'], $quantity );
 				
