@@ -27,8 +27,6 @@ class LWWC_Composite_Admin {
 	public function init() {
 		// Enqueue admin scripts on Link Wizard pages.
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );
-
-		error_log( 'Link Wizard for Composites: Admin assets handler initialized' );
 	}
 
 	/**
@@ -85,7 +83,6 @@ class LWWC_Composite_Admin {
 				)
 			);
 
-			error_log( 'Link Wizard for Composites: Admin assets enqueued' );
 		}
 	}
 
@@ -96,12 +93,7 @@ class LWWC_Composite_Admin {
 	 * @return bool True if on Link Wizard page.
 	 */
 	private function is_link_wizard_page( $hook ) {
-		// Link Wizard uses admin.php?page=link-wizard-for-woocommerce
-		if ( isset( $_GET['page'] ) && $_GET['page'] === 'link-wizard-for-woocommerce' ) {
-			return true;
-		}
-
-		return false;
+		return 'product_page_link-wizard-for-woocommerce' === $hook;
 	}
 }
 

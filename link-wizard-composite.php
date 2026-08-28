@@ -9,10 +9,10 @@
  * License: GPL v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: link-wizard-composite
- * Domain Path: /languages
- * Requires at least: 5.8
+ * Requires at least: 6.2
+ * Tested up to: 7.1
  * Requires PHP: 7.4
- * Requires Plugins: link-wizard-for-woocommerce
+ * Requires Plugins: link-wizard-for-woocommerce, woocommerce
  *
  * @package Link_Wizard_Composite
  */
@@ -72,8 +72,8 @@ function lwwc_composite_missing_dependency_notice() {
 	?>
 	<div class="notice notice-error">
 		<p>
-			<strong>Link Wizard for Composites</strong> requires 
-			<strong>Link Wizard for WooCommerce</strong> to be installed and activated.
+			<strong><?php esc_html_e( 'Link Wizard for Composites', 'link-wizard-composite' ); ?></strong>
+			<?php esc_html_e( 'requires Link Wizard for WooCommerce to be installed and activated.', 'link-wizard-composite' ); ?>
 		</p>
 	</div>
 	<?php
@@ -86,8 +86,8 @@ function lwwc_composite_missing_woocommerce_notice() {
 	?>
 	<div class="notice notice-error">
 		<p>
-			<strong>Link Wizard for Composites</strong> requires 
-			<strong>WooCommerce</strong> to be installed and activated.
+			<strong><?php esc_html_e( 'Link Wizard for Composites', 'link-wizard-composite' ); ?></strong>
+			<?php esc_html_e( 'requires WooCommerce to be installed and activated.', 'link-wizard-composite' ); ?>
 		</p>
 	</div>
 	<?php
@@ -100,7 +100,8 @@ function lwwc_composite_missing_composite_notice() {
 	?>
 	<div class="notice notice-warning">
 		<p>
-			<strong>Link Wizard for Composites</strong> requires <strong>WooCommerce Composite Products</strong> to be installed and activated to enable composite product checkout-links.
+			<strong><?php esc_html_e( 'Link Wizard for Composites', 'link-wizard-composite' ); ?></strong>
+			<?php esc_html_e( 'requires WooCommerce Composite Products to be installed and activated to enable composite product checkout links.', 'link-wizard-composite' ); ?>
 		</p>
 	</div>
 	<?php

@@ -1,266 +1,262 @@
 /**
  * Composite Product Configuration Styles
- * 
+ *
  * Styles for the composite product configuration UI component.
  */
 
 /* Main configuration container */
 .lwwc-composite-config {
-    background: #fff;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    margin: 15px 0;
-    padding: 20px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+	background: #fff;
+	border: 1px solid #ddd;
+	border-radius: 4px;
+	margin: 15px 0;
+	padding: 20px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 /* Configuration header */
 .lwwc-composite-config-header {
-    margin-bottom: 20px;
-    padding-bottom: 15px;
-    border-bottom: 1px solid #eee;
+	margin-bottom: 20px;
+	padding-bottom: 15px;
+	border-bottom: 1px solid #eee;
 }
 
 .lwwc-composite-config-header h3 {
-    margin: 0 0 10px 0;
-    font-size: 16px;
-    font-weight: 600;
-    color: #23282d;
+	margin: 0 0 10px 0;
+	font-size: 16px;
+	font-weight: 600;
+	color: #23282d;
 }
 
 .lwwc-composite-config-price {
-    font-size: 14px;
-    color: #0073aa;
+	font-size: 14px;
+	color: #0073aa;
 }
 
 .lwwc-composite-config-price strong {
-    font-weight: 600;
+	font-weight: 600;
 }
 
 /* Components container */
 .lwwc-composite-config-components {
-    margin-bottom: 25px;
+	margin-bottom: 25px;
 }
 
 /* Individual component */
 .lwwc-composite-config-component {
-    margin-bottom: 20px;
-    padding: 15px;
-    background: #f9f9f9;
-    border: 1px solid #e1e1e1;
-    border-radius: 3px;
+	margin-bottom: 20px;
+	padding: 15px;
+	background: #f9f9f9;
+	border: 1px solid #e1e1e1;
+	border-radius: 3px;
 }
 
 .lwwc-composite-config-component:last-child {
-    margin-bottom: 0;
+	margin-bottom: 0;
 }
 
 .lwwc-composite-config-component-label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: 600;
-    color: #23282d;
-    font-size: 14px;
+	display: block;
+	margin-bottom: 8px;
+	font-weight: 600;
+	color: #23282d;
+	font-size: 14px;
 }
 
 /* Component controls container */
 .lwwc-composite-config-component-controls {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    flex-wrap: wrap;
+	display: flex;
+	align-items: center;
+	gap: 15px;
+	flex-wrap: wrap;
 }
 
 /* Component selection dropdown */
 .lwwc-composite-config-component-select {
-    flex: 1;
-    min-width: 200px;
-    padding: 8px 12px;
-    border: 1px solid #ddd;
-    border-radius: 3px;
-    background: #fff;
-    font-size: 14px;
+	flex: 1;
+	min-width: 200px;
+	padding: 8px 12px;
+	border: 1px solid #ddd;
+	border-radius: 3px;
+	background: #fff;
+	font-size: 14px;
 }
 
 .lwwc-composite-config-component-select:focus {
-    border-color: #0073aa;
-    box-shadow: 0 0 0 1px #0073aa;
-    outline: none;
+	border-color: #0073aa;
+	box-shadow: 0 0 0 1px #0073aa;
+	outline: none;
 }
 
 /* Single option display */
 .lwwc-composite-config-single-option {
-    flex: 1;
-    padding: 8px 12px;
-    background: #f0f0f0;
-    border: 1px solid #ddd;
-    border-radius: 3px;
-    font-size: 14px;
-    color: #555;
+	flex: 1;
+	padding: 8px 12px;
+	background: #f0f0f0;
+	border: 1px solid #ddd;
+	border-radius: 3px;
+	font-size: 14px;
+	color: #555;
 }
 
 /* No options display */
 .lwwc-composite-config-no-options {
-    flex: 1;
-    padding: 8px 12px;
-    background: #f9f9f9;
-    border: 1px solid #ddd;
-    border-radius: 3px;
-    font-size: 14px;
-    color: #999;
-    font-style: italic;
+	flex: 1;
+	padding: 8px 12px;
+	background: #f9f9f9;
+	border: 1px solid #ddd;
+	border-radius: 3px;
+	font-size: 14px;
+	color: #999;
+	font-style: italic;
 }
 
 /* Variable Product Selector: Styles now provided by core plugin */
+
 /* The shared VariableProductSelector component includes all necessary CSS */
 
 /* Quantity controls */
 .lwwc-composite-config-quantity {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    white-space: nowrap;
-    margin-left: auto; /* Push to the right */
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	white-space: nowrap;
+	margin-left: auto; /* Push to the right */
 }
 
 .lwwc-composite-config-quantity-range {
-    font-size: 12px;
-    color: #666;
-    margin-right: auto; /* Keep on the left side of quantity group */
+	font-size: 12px;
+	color: #666;
+	margin-right: auto; /* Keep on the left side of quantity group */
 }
 
 .lwwc-composite-config-quantity label {
-    font-size: 14px;
-    font-weight: 500;
-    color: #555;
-    margin: 0;
+	font-size: 14px;
+	font-weight: 500;
+	color: #555;
+	margin: 0;
 }
 
 .lwwc-composite-config-quantity-input {
-    width: 60px;
-    padding: 6px 8px;
-    border: 1px solid #ddd;
-    border-radius: 3px;
-    text-align: center;
-    font-size: 14px;
+	width: 60px;
+	padding: 6px 8px;
+	border: 1px solid #ddd;
+	border-radius: 3px;
+	text-align: center;
+	font-size: 14px;
 }
 
 .lwwc-composite-config-quantity-input:focus {
-    border-color: #0073aa;
-    box-shadow: 0 0 0 1px #0073aa;
-    outline: none;
+	border-color: #0073aa;
+	box-shadow: 0 0 0 1px #0073aa;
+	outline: none;
 }
 
 /* Action buttons */
 .lwwc-composite-config-actions {
-    display: flex;
-    gap: 10px;
-    justify-content: flex-end;
-    padding-top: 15px;
-    border-top: 1px solid #eee;
+	display: flex;
+	gap: 10px;
+	justify-content: flex-end;
+	padding-top: 15px;
+	border-top: 1px solid #eee;
 }
 
 .lwwc-composite-config-update {
-    background: #0073aa !important;
-    border-color: #0073aa !important;
-    color: #fff !important;
-    padding: 8px 16px !important;
-    font-size: 14px !important;
-    font-weight: 500 !important;
-    border-radius: 3px !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    gap: 6px !important;
+	background: #0073aa !important;
+	border-color: #0073aa !important;
+	color: #fff !important;
+	padding: 8px 16px !important;
+	font-size: 14px !important;
+	font-weight: 500 !important;
+	border-radius: 3px !important;
+	display: inline-flex !important;
+	align-items: center !important;
+	gap: 6px !important;
 }
 
 .lwwc-composite-config-update:hover {
-    background: #005a87 !important;
-    border-color: #005a87 !important;
+	background: #005a87 !important;
+	border-color: #005a87 !important;
 }
 
 .lwwc-composite-config-update .dashicons {
-    font-size: 16px;
-    width: 16px;
-    height: 16px;
+	font-size: 16px;
+	width: 16px;
+	height: 16px;
 }
 
 .lwwc-composite-config-cancel {
-    background: #f1f1f1 !important;
-    border-color: #ddd !important;
-    color: #555 !important;
-    padding: 8px 16px !important;
-    font-size: 14px !important;
-    font-weight: 500 !important;
-    border-radius: 3px !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    gap: 6px !important;
+	background: #f1f1f1 !important;
+	border-color: #ddd !important;
+	color: #555 !important;
+	padding: 8px 16px !important;
+	font-size: 14px !important;
+	font-weight: 500 !important;
+	border-radius: 3px !important;
+	display: inline-flex !important;
+	align-items: center !important;
+	gap: 6px !important;
 }
 
 .lwwc-composite-config-cancel:hover {
-    background: #e1e1e1 !important;
-    border-color: #ccc !important;
+	background: #e1e1e1 !important;
+	border-color: #ccc !important;
 }
 
 .lwwc-composite-config-cancel .dashicons {
-    font-size: 16px;
-    width: 16px;
-    height: 16px;
+	font-size: 16px;
+	width: 16px;
+	height: 16px;
 }
 
 /* Loading state */
 .lwwc-composite-config-loading {
-    text-align: center;
-    padding: 40px 20px;
-    color: #666;
-    font-size: 14px;
+	text-align: center;
+	padding: 40px 20px;
+	color: #666;
+	font-size: 14px;
 }
 
 .lwwc-composite-config-loading .spinner {
-    margin-right: 10px;
+	margin-right: 10px;
 }
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
-    .lwwc-composite-config-component-controls {
-        flex-direction: column;
-        align-items: stretch;
-    }
-    
-    .lwwc-composite-config-component-select {
-        min-width: auto;
-    }
-    
-    .lwwc-composite-config-quantity {
-        justify-content: space-between;
-    }
-    
-    .lwwc-composite-config-actions {
-        flex-direction: column;
-    }
-    
-    .lwwc-composite-config-update,
-    .lwwc-composite-config-cancel {
-        width: 100%;
-        justify-content: center;
-    }
-}
 
-/* Integration with Link Wizard theme */
-.lwwc-composite-config {
-    margin-left: 0;
-    margin-right: 0;
+	.lwwc-composite-config-component-controls {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.lwwc-composite-config-component-select {
+		min-width: auto;
+	}
+
+	.lwwc-composite-config-quantity {
+		justify-content: space-between;
+	}
+
+	.lwwc-composite-config-actions {
+		flex-direction: column;
+	}
+
+	.lwwc-composite-config-update,
+	.lwwc-composite-config-cancel {
+		width: 100%;
+		justify-content: center;
+	}
 }
 
 /* Ensure proper spacing in Link Wizard context */
 .lwwc-product-item + .lwwc-composite-config {
-    margin-top: 10px;
+	margin-top: 10px;
 }
 
 /* Price calculation spinner */
 .lwwc-composite-config-price .spinner {
-    margin-left: 8px;
-    float: none;
-    display: inline-block;
+	margin-left: 8px;
+	float: none;
+	display: inline-block;
 }
 
