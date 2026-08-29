@@ -402,67 +402,25 @@ class LWWC_Composite_URL_Mapper {
 	 * @return bool|string Cart item key on success, false on failure.
 	 */
 	private function add_composite_to_cart( $product, $configuration, $quantity = 1 ) {
-		// Build cart item data with composite configuration.
-		$cart_item_data = array();
-		
-		// Format the components for WooCommerce Composite Products.
-		// WooCommerce Composite Products expects $_GET parameters, not just cart_item_data!
-		if ( isset( $configuration['components'] ) && ! empty( $configuration['components'] ) ) {
-			$cart_item_data['composite_data'] = array();
-			
-			foreach ( $configuration['components'] as $component_id => $component_data ) {
-				if ( isset( $component_data['product_id'] ) ) {
-					// Build component data for cart
-					$component_cart_data = array(
-						'product_id' => absint( $component_data['product_id'] ),
-						'quantity'   => isset( $component_data['quantity'] ) ? absint( $component_data['quantity'] ) : 1,
-					);
-					
-					// Set $_GET parameters for WooCommerce Composite Products to read.
-					// Note: wccps_* are used for component product selection (parent product for variables)
-					$_GET['wccps_' . $component_id ] = absint( $component_data['product_id'] );
-					$_GET['wccpq_' . $component_id ] = isset( $component_data['quantity'] ) ? absint( $component_data['quantity'] ) : 1;
-					
-					// Add variation attributes if present (for variable products with "Any" attributes).
-					if ( isset( $component_data['attributes'] ) && ! empty( $component_data['attributes'] ) ) {
-						// Set variation ID parameter (wccpv_c1=82)
-						// Use variation_id if available, otherwise use product_id
-						$variation_id = isset( $component_data['variation_id'] ) ? absint( $component_data['variation_id'] ) : absint( $component_data['product_id'] );
-						$_GET['wccpv_' . $component_id ] = $variation_id;
-						
-						// Add variation_id to component data (use variation_id if available)
-						$component_cart_data['variation_id'] = $variation_id;
-						
-						// Format attributes with 'attribute_' prefix (WooCommerce format)
-						$formatted_attributes = array();
-						foreach ( $component_data['attributes'] as $attr_name => $attr_value ) {
-							// Add 'attribute_' prefix if not already present
-							$formatted_key = strpos( $attr_name, 'attribute_' ) === 0 ? $attr_name : 'attribute_' . $attr_name;
-							$formatted_attributes[ $formatted_key ] = sanitize_text_field( $attr_value );
-						}
-						$component_cart_data['attributes'] = $formatted_attributes;
-						
-						// Set attribute $_GET parameters (wccp_attribute_pa_color_c1=blue, etc.)
-						foreach ( $component_data['attributes'] as $attr_name => $attr_value ) {
-							$_GET[ 'wccp_attribute_' . $attr_name . '_' . $component_id ] = sanitize_text_field( $attr_value );
-						}
-					}
-					
-					$cart_item_data['composite_data'][ $component_id ] = $component_cart_data;
-				}
-			}
+		$components = isset( $configuration['components'] ) && is_array( $configuration['components'] )
+			? $configuration['components']
+			: array();
+		$components = $this->normalize_component_configuration( $components );
+
+		if ( is_wp_error( $components ) || ! class_exists( 'WC_CP_Cart' ) ) {
+			return false;
 		}
 
-		// Add to cart using WooCommerce's method.
-		// WooCommerce Composite Products will read the $_GET parameters we just set.
 		try {
-			$cart_item_key = WC()->cart->add_to_cart(
+			$cart_item_key = WC_CP_Cart::instance()->add_composite_to_cart(
 				$product->get_id(),
-				$quantity,
-				0,  // Variation ID (not used for composites).
-				array(),  // Variation attributes (not used for composites).
-				$cart_item_data  // This contains our composite_data.
+				absint( $quantity ),
+				$components
 			);
+
+			if ( is_wp_error( $cart_item_key ) ) {
+				return false;
+			}
 
 			return $cart_item_key;
 		} catch ( Exception $e ) {
@@ -475,6 +433,71 @@ class LWWC_Composite_URL_Mapper {
 			);
 			return false;
 		}
+	}
+
+	/**
+	 * Normalize stored component selections for the Composite Products cart API.
+	 *
+	 * Older mappings may contain a variable parent without variation data. In
+	 * that case, resolve the product's default variation so existing links remain
+	 * usable without passing incomplete data to WooCommerce.
+	 *
+	 * @param array $components Stored component configuration.
+	 * @return array|WP_Error Normalized configuration, or an error when invalid.
+	 */
+	private function normalize_component_configuration( $components ) {
+		$normalized = array();
+
+		foreach ( $components as $component_id => $component_data ) {
+			$product_id = isset( $component_data['product_id'] ) ? absint( $component_data['product_id'] ) : 0;
+			$product    = wc_get_product( $product_id );
+
+			if ( ! $product ) {
+				return new WP_Error( 'invalid_composite_component', __( 'A selected composite component is unavailable.', 'link-wizard-composite' ) );
+			}
+
+			$item = array(
+				'product_id' => $product_id,
+				'quantity'   => isset( $component_data['quantity'] ) ? absint( $component_data['quantity'] ) : 1,
+			);
+
+			if ( $product->is_type( 'variable' ) ) {
+				$attributes = array();
+				if ( ! empty( $component_data['attributes'] ) && is_array( $component_data['attributes'] ) ) {
+					foreach ( $component_data['attributes'] as $attribute_name => $attribute_value ) {
+						$key                = 0 === strpos( $attribute_name, 'attribute_' ) ? $attribute_name : 'attribute_' . $attribute_name;
+						$attributes[ $key ] = sanitize_text_field( $attribute_value );
+					}
+				}
+
+				$variation_id = isset( $component_data['variation_id'] ) ? absint( $component_data['variation_id'] ) : 0;
+				$variation    = $variation_id ? wc_get_product( $variation_id ) : false;
+
+				if ( ! $variation || ! $variation->is_type( 'variation' ) || $variation->get_parent_id() !== $product_id ) {
+					$match_attributes = $attributes;
+					if ( empty( $match_attributes ) ) {
+						foreach ( $product->get_default_attributes() as $attribute_name => $attribute_value ) {
+							$match_attributes[ 'attribute_' . $attribute_name ] = $attribute_value;
+						}
+					}
+
+					$data_store   = WC_Data_Store::load( 'product' );
+					$variation_id = $data_store->find_matching_product_variation( $product, $match_attributes );
+					$variation    = $variation_id ? wc_get_product( $variation_id ) : false;
+				}
+
+				if ( ! $variation || ! $variation->is_type( 'variation' ) ) {
+					return new WP_Error( 'missing_composite_variation', __( 'Choose a variation for each variable composite component.', 'link-wizard-composite' ) );
+				}
+
+				$item['variation_id'] = $variation->get_id();
+				$item['attributes']   = array_merge( $variation->get_variation_attributes(), $attributes );
+			}
+
+			$normalized[ sanitize_key( $component_id ) ] = $item;
+		}
+
+		return $normalized;
 	}
 
 }
