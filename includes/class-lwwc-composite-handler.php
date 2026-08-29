@@ -32,6 +32,7 @@ class LWWC_Composite_Handler {
 	public function init() {
 		// Register this plugin with Link Wizard's addon system.
 		add_filter( 'lwwc_addon_capabilities', array( $this, 'register_capabilities' ), 10, 2 );
+		add_filter( 'lwwc_addon_icon', array( $this, 'register_icon' ), 10, 2 );
 
 		// Register our product handler with Link Wizard's handler manager.
 		add_action( 'lwwc_after_product_handlers_loaded', array( $this, 'register_product_handler' ) );
@@ -116,7 +117,7 @@ class LWWC_Composite_Handler {
 	 */
 	public function register_capabilities( $capabilities, $plugin_slug ) {
 		// Only respond if Link Wizard is asking about our plugin.
-		if ( 'link-wizard-composite/link-wizard-composite.php' !== $plugin_slug ) {
+		if ( ! in_array( $plugin_slug, array( 'link-wizard-composite', 'link-wizard-composite/link-wizard-composite.php' ), true ) ) {
 			return $capabilities;
 		}
 
@@ -129,5 +130,20 @@ class LWWC_Composite_Handler {
 				'price_calculation',  // We can calculate composite prices.
 			),
 		);
+	}
+
+	/**
+	 * Register the icon shown in the add-on card.
+	 *
+	 * @param string $icon        Current icon.
+	 * @param string $plugin_slug Add-on directory slug.
+	 * @return string Filtered icon.
+	 */
+	public function register_icon( $icon, $plugin_slug ) {
+		if ( 'link-wizard-composite' !== $plugin_slug ) {
+			return $icon;
+		}
+
+		return '🧩';
 	}
 }
