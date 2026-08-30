@@ -4,7 +4,7 @@ Tags: woocommerce, composite products, checkout links, add to cart
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.0
+Stable tag: 1.0.0-beta1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -50,7 +50,7 @@ Yes. Generated checkout links are designed to be shared publicly. Administrative
 
 == Changelog ==
 
-= 1.0.0 =
+= 1.0.0-beta1 =
 
 * Add composite product search integration.
 * Add default and custom component configuration support.
