@@ -1,0 +1,52 @@
+name: Build release package
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out tagged release
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Build production assets
+        run: |
+          npm ci
+          npm run build
+
+      - name: Stage production plugin
+        run: |
+          mkdir -p dist/link-wizard-composite
+          rsync -a ./ dist/link-wizard-composite/ \
+            --exclude='.git/' \
+            --exclude='.github/' \
+            --exclude='dist/' \
+            --exclude='.gitignore' \
+            --exclude='node_modules/' \
+            --exclude='admin/src/' \
+            --exclude='*.md' \
+            --exclude='*.map' \
+            --exclude='package.json' \
+            --exclude='package-lock.json' \
+            --exclude='webpack.config.js'
+
+      - name: Create versioned ZIP
+        run: |
+          cd dist
+          zip -qr "link-wizard-composite-${GITHUB_REF_NAME}.zip" link-wizard-composite
+
+      - name: Attach package to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/link-wizard-composite-${{ github.ref_name }}.zip
