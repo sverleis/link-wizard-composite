@@ -1,6 +1,6 @@
 {
   "name": "link-wizard-composite",
-  "version": "1.0.0",
+  "version": "1.0.0-beta1",
   "description": "Addon for Link Wizard that adds support for WooCommerce Composite Products",
   "private": true,
   "scripts": {
@@ -24,5 +24,3 @@
     "@wordpress/element": "^5.0.0"
   }
 }
-
-
