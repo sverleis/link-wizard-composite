@@ -13,6 +13,10 @@
  * Tested up to: 7.1
  * Requires PHP: 7.4
  * Requires Plugins: link-wizard-for-woocommerce, woocommerce
+ * Link Wizard Add-on API: 2.0
+ * Requires Link Wizard: 2.0.0-beta1
+ * Tested Link Wizard: 2.0
+ * Requires WooCommerce Extension: woocommerce-composite-products
  *
  * @package Link_Wizard_Composite
  */
@@ -39,8 +43,13 @@ add_action( 'before_woocommerce_init', function() {
  * Initialize the plugin.
  */
 function lwwc_composite_init() {
-	// Check if Link Wizard for WooCommerce is active.
-	if ( ! class_exists( 'LWWC_Link_Wizard' ) ) {
+	// Check if a compatible Link Wizard for WooCommerce is active.
+	if (
+		! class_exists( 'LWWC_Link_Wizard' ) ||
+		! defined( 'LWWC_ADDON_API_VERSION' ) ||
+		'2.0' !== LWWC_ADDON_API_VERSION ||
+		version_compare( LWWC_VERSION, '2.0.0-beta1', '<' )
+	) {
 		add_action( 'admin_notices', 'lwwc_composite_missing_dependency_notice' );
 		return;
 	}
@@ -73,7 +82,7 @@ function lwwc_composite_missing_dependency_notice() {
 	<div class="notice notice-error">
 		<p>
 			<strong><?php esc_html_e( 'Link Wizard for Composites', 'link-wizard-composite' ); ?></strong>
-			<?php esc_html_e( 'requires Link Wizard for WooCommerce to be installed and activated.', 'link-wizard-composite' ); ?>
+			<?php esc_html_e( 'requires Link Wizard for WooCommerce 2.0.0-beta1 or newer with add-on API 2.0.', 'link-wizard-composite' ); ?>
 		</p>
 	</div>
 	<?php

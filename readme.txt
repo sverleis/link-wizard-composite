@@ -23,15 +23,15 @@ Features include:
 * Short mapped URLs for complex composite configurations.
 * Price calculation through authenticated REST API endpoints.
 
-This plugin requires Link Wizard for WooCommerce, WooCommerce, and WooCommerce Composite Products to be installed and active.
+This plugin requires Link Wizard for WooCommerce 2.0.0-beta1 or newer with add-on API 2.0, WooCommerce, and WooCommerce Composite Products to be installed and active.
 
 == Installation ==
 
 1. Install and activate WooCommerce.
 2. Install and activate WooCommerce Composite Products.
-3. Install and activate Link Wizard for WooCommerce.
-4. Upload the `link-wizard-composite` directory to `/wp-content/plugins/` or install the packaged ZIP.
-5. Activate Link Wizard for Composites.
+3. Install and activate Link Wizard for WooCommerce 2.0.0-beta1 or newer.
+4. Download the versioned ZIP from https://github.com/sverleis/link-wizard-composite/releases.
+5. Upload and activate the ZIP through Plugins > Add New > Upload Plugin.
 6. Open Products > Link Wizard.
 
 == Frequently Asked Questions ==
