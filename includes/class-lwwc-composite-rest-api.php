@@ -51,7 +51,6 @@ class LWWC_Composite_REST_API {
 		// Register REST API routes.
 		add_action( 'rest_api_init', array( $this, 'register_routes' ) );
 
-		error_log( 'Link Wizard for Composites: REST API initialized' );
 	}
 
 	/**
@@ -182,7 +181,6 @@ class LWWC_Composite_REST_API {
 			)
 		);
 
-		error_log( 'Link Wizard for Composites: REST API routes registered' );
 	}
 
 	/**

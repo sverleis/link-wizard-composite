@@ -30,11 +30,9 @@ class LWWC_Composite_Handler {
 	 * This is called from the main plugin file after all dependencies are confirmed.
 	 */
 	public function init() {
-		// Log initialization for debugging.
-		error_log( 'Link Wizard for Composites: Handler initialized' );
-
 		// Register this plugin with Link Wizard's addon system.
 		add_filter( 'lwwc_addon_capabilities', array( $this, 'register_capabilities' ), 10, 2 );
+		add_filter( 'lwwc_addon_icon', array( $this, 'register_icon' ), 10, 2 );
 
 		// Register our product handler with Link Wizard's handler manager.
 		add_action( 'lwwc_after_product_handlers_loaded', array( $this, 'register_product_handler' ) );
@@ -61,7 +59,6 @@ class LWWC_Composite_Handler {
 		$url_mapper = new LWWC_Composite_URL_Mapper();
 		$url_mapper->init();
 
-		error_log( 'Link Wizard for Composites: URL Mapper loaded' );
 	}
 
 	/**
@@ -76,7 +73,6 @@ class LWWC_Composite_Handler {
 		$rest_api = new LWWC_Composite_REST_API();
 		$rest_api->init();
 
-		error_log( 'Link Wizard for Composites: REST API loaded' );
 	}
 
 	/**
@@ -91,7 +87,6 @@ class LWWC_Composite_Handler {
 		$admin = new LWWC_Composite_Admin();
 		$admin->init();
 
-		error_log( 'Link Wizard for Composites: Admin assets loaded' );
 	}
 
 	/**
@@ -108,8 +103,7 @@ class LWWC_Composite_Handler {
 		// Create and register the handler.
 		$composite_handler = new LWWC_Composite_Product_Handler();
 		$handler_manager->register_handler( $composite_handler );
-		
-		error_log( 'Link Wizard for Composites: Product handler registered' );
+
 	}
 
 	/**
@@ -123,7 +117,7 @@ class LWWC_Composite_Handler {
 	 */
 	public function register_capabilities( $capabilities, $plugin_slug ) {
 		// Only respond if Link Wizard is asking about our plugin.
-		if ( 'link-wizard-composite/link-wizard-composite.php' !== $plugin_slug ) {
+		if ( ! in_array( $plugin_slug, array( 'link-wizard-composite', 'link-wizard-composite/link-wizard-composite.php' ), true ) ) {
 			return $capabilities;
 		}
 
@@ -136,5 +130,20 @@ class LWWC_Composite_Handler {
 				'price_calculation',  // We can calculate composite prices.
 			),
 		);
+	}
+
+	/**
+	 * Register the icon shown in the add-on card.
+	 *
+	 * @param string $icon        Current icon.
+	 * @param string $plugin_slug Add-on directory slug.
+	 * @return string Filtered icon.
+	 */
+	public function register_icon( $icon, $plugin_slug ) {
+		if ( 'link-wizard-composite' !== $plugin_slug ) {
+			return $icon;
+		}
+
+		return '🧩';
 	}
 }
