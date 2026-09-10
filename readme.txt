@@ -4,7 +4,7 @@ Tags: woocommerce, composite products, checkout links, add to cart
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.0-beta1
+Stable tag: 1.0.0-beta2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -49,6 +49,14 @@ Composite configurations contain component selections and quantities that cannot
 Yes. Generated checkout links are designed to be shared publicly. Administrative configuration and REST operations remain permission protected.
 
 == Changelog ==
+
+= 1.0.0-beta2 =
+
+* Declare Link Wizard add-on API 2.0 and minimum compatible core version.
+* Prevent initialization against incompatible core versions.
+* Improve the core dependency notice.
+* Add automated build and versioned GitHub release packages.
+* Document installation from the official GitHub Releases page.
 
 = 1.0.0-beta1 =
 
