@@ -3,7 +3,7 @@
  * Plugin Name: Link Wizard for Composites
  * Plugin URI: https://github.com/sverleis/link-wizard-composite
  * Description: Adds support for WooCommerce Composite Products to Link Wizard, enabling custom checkout-links with component selections and quantities.
- * Version: 1.0.0-beta2
+ * Version: 1.0.0
  * Author: Sven Leisegang
  * Author URI: https://github.com/sverleis
  * License: GPL v2 or later
@@ -14,7 +14,7 @@
  * Requires PHP: 7.4
  * Requires Plugins: link-wizard-for-woocommerce, woocommerce
  * Link Wizard Add-on API: 2.0
- * Requires Link Wizard: 2.0.0-beta1
+ * Requires Link Wizard: 2.0.0
  * Tested Link Wizard: 2.0
  * Requires WooCommerce Extension: woocommerce-composite-products
  *
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define plugin constants.
-define( 'LWWC_COMPOSITE_VERSION', '1.0.0-beta2' );
+define( 'LWWC_COMPOSITE_VERSION', '1.0.0' );
 define( 'LWWC_COMPOSITE_PATH', plugin_dir_path( __FILE__ ) );
 define( 'LWWC_COMPOSITE_URL', plugin_dir_url( __FILE__ ) );
 
@@ -49,7 +49,7 @@ function lwwc_composite_init() {
 		! defined( 'LWWC_ADDON_API_VERSION' ) ||
 		! defined( 'LWWC_VERSION' ) ||
 		2 !== absint( LWWC_ADDON_API_VERSION ) ||
-		version_compare( LWWC_VERSION, '2.0.0-beta1', '<' )
+		version_compare( LWWC_VERSION, '2.0.0', '<' )
 	) {
 		add_action( 'admin_notices', 'lwwc_composite_missing_dependency_notice' );
 		return;
@@ -83,7 +83,7 @@ function lwwc_composite_missing_dependency_notice() {
 	<div class="notice notice-error">
 		<p>
 			<strong><?php esc_html_e( 'Link Wizard for Composites', 'link-wizard-composite' ); ?></strong>
-			<?php esc_html_e( 'requires Link Wizard for WooCommerce 2.0.0-beta1 or newer to be installed and activated with add-on API 2.x.', 'link-wizard-composite' ); ?>
+			<?php esc_html_e( 'requires Link Wizard for WooCommerce 2.0.0 or newer to be installed and activated with add-on API 2.x.', 'link-wizard-composite' ); ?>
 		</p>
 	</div>
 	<?php

@@ -1,6 +1,6 @@
 # Link Wizard Composite
 
-**Version**: 1.0.0-beta2
+**Version**: 1.0.0
 **Author**: Sven Leisegang  
 **License**: GPL v2 or later
 
