@@ -3,9 +3,9 @@
  * Plugin Name: Link Wizard for Composites
  * Plugin URI: https://github.com/sverleis/link-wizard-composite
  * Description: Adds support for WooCommerce Composite Products to Link Wizard, enabling custom checkout-links with component selections and quantities.
- * Version: 1.0.0
- * Author: Sven Leisegang
- * Author URI: https://github.com/sverleis
+ * Version: 1.0.1
+ * Author: Mags Industries
+ * Author URI: https://magsindustries.wordpress.com
  * License: GPL v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: link-wizard-composite
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define plugin constants.
-define( 'LWWC_COMPOSITE_VERSION', '1.0.0' );
+define( 'LWWC_COMPOSITE_VERSION', '1.0.1' );
 define( 'LWWC_COMPOSITE_PATH', plugin_dir_path( __FILE__ ) );
 define( 'LWWC_COMPOSITE_URL', plugin_dir_url( __FILE__ ) );
 
