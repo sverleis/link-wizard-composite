@@ -1,7 +1,7 @@
 # Link Wizard Composite
 
-**Version**: 1.0.0
-**Author**: Sven Leisegang  
+**Version**: 1.0.1
+**Author**: Mags Industries
 **License**: GPL v2 or later
 
 ## What is This Plugin?
